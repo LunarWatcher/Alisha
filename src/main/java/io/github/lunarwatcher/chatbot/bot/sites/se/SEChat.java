@@ -160,18 +160,6 @@ public class SEChat implements Chat {
         return site.getName();
     }
 
-    public void save(){
-        if(db != null){
-            List<Integer> rooms = new ArrayList<>();
-            for(SERoom room : this.rooms){
-                rooms.add(room.getId());
-            }
-
-            db.put(getName() + "-rooms", rooms);
-        }
-
-    }
-
     private class SEThread extends Thread {
         int retries;
         public void run() {
@@ -228,5 +216,21 @@ public class SEChat implements Chat {
                 return r;
         }
         return null;
+    }
+
+    public void save(){
+        if(db != null){
+            List<Integer> rooms = new ArrayList<>();
+            for(SERoom room : this.rooms){
+                rooms.add(room.getId());
+            }
+
+            db.put(getName() + "-rooms", rooms);
+        }
+
+    }
+
+    public void load(){
+
     }
 }

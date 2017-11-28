@@ -2,6 +2,7 @@ package io.github.lunarwatcher.chatbot.bot;
 
 import io.github.lunarwatcher.chatbot.Database;
 import io.github.lunarwatcher.chatbot.Site;
+import io.github.lunarwatcher.chatbot.bot.sites.Chat;
 import io.github.lunarwatcher.chatbot.bot.sites.discord.DiscordChat;
 import io.github.lunarwatcher.chatbot.bot.sites.se.SEChat;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -19,8 +20,8 @@ public class Bot {
     Database database;
     Properties botProps;
     List<Site> sites;
-    List<SEChat> seChats = new ArrayList<>();
-    DiscordChat discord;
+    List<Chat> chats = new ArrayList<>();
+
     public Bot(Database db, Properties botProps, List<Site> sites){
         this.database = db;
         this.botProps = botProps;
@@ -30,24 +31,24 @@ public class Bot {
     public void initialize() throws IOException{
         for(Site site : sites){
             if(site.getName().equals("discord")) {
-                discord = new DiscordChat(site, botProps, database);
+                chats.add(new DiscordChat(site, botProps, database));
             }else {
 
                 CloseableHttpClient httpClient = HttpClients.createDefault();
                 ClientManager websocketClient = ClientManager.createClient(JdkClientContainer.class.getName());
                 websocketClient.setDefaultMaxSessionIdleTimeout(0);
                 websocketClient.getProperties().put(ClientProperties.RETRY_AFTER_SERVICE_UNAVAILABLE, true);
-                SEChat seChat = new SEChat(site, httpClient, websocketClient, botProps, database);
-                seChats.add(seChat);
+                chats.add(new SEChat(site, httpClient, websocketClient, botProps, database));
+
             }
         }
 
     }
 
     public void kill(){
-        for(SEChat s : seChats){
+        System.out.println("Killing");
+        for(Chat s : chats){
             s.save();
         }
-        discord.save();
     }
 }

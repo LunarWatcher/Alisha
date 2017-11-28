@@ -45,10 +45,6 @@ public class DiscordChat implements Chat{
 
         regex = new ArrayList<>();
 
-        for(IGuild guild : client.getGuilds()){
-            System.out.println(guild.getName());
-        }
-
     }
 
     public void load(){
@@ -73,7 +69,6 @@ public class DiscordChat implements Chat{
     @EventSubscriber
     public void onMessageReceived(MessageReceivedEvent event){
         String msg = event.getMessage().getContent();
-        System.out.println(msg);
 
         if(CommandCenter.isCommand(msg)){
             if(msg.startsWith(TRIGGER + "stats")){
@@ -112,7 +107,6 @@ public class DiscordChat implements Chat{
         }else{
             long uid = event.getAuthor().getLongID();
             String uname = event.getAuthor().getName();
-            System.out.println("(" + uid + ")<" + uname + ">");
             RMatch u = null;
 
             for(RMatch m : regex){
@@ -168,7 +162,6 @@ public class DiscordChat implements Chat{
                 Matcher m = p.matcher(input);
                 if (m.find()) {
                     occurences.put(reg.getKey(), occurences.get(reg.getKey()) + 1);
-                    System.out.println("Matched for " + reg.getValue());
                     hits++;
                     break;
                 }
@@ -188,11 +181,9 @@ public class DiscordChat implements Chat{
     }
 
     public static class Match extends AbstractCommand {
-
         public Match() {
             super("stats", null, "Get the status for a user", TRIGGER + "stats <username>");
         }
-
         @Override
         public BMessage handleCommand(@NotNull String input) {
             return null;

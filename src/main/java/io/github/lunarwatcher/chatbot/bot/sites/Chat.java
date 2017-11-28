@@ -6,5 +6,6 @@ import java.io.IOException;
 
 public interface Chat {
     void logIn() throws IOException;
-
+    void save();
+    void load();
 }
