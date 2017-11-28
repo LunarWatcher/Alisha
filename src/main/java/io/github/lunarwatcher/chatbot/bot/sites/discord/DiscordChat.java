@@ -40,7 +40,9 @@ public class DiscordChat implements Chat{
         this.botProps = botProps;
         logIn();
         commands = new CommandCenter(botProps);
+        commands.loadDiscord();
         commands.loadNSFW();
+
         regex = new ArrayList<>();
 
         for(IGuild guild : client.getGuilds()){
@@ -65,46 +67,6 @@ public class DiscordChat implements Chat{
                 .build();
         client.getDispatcher().registerListener(this);
         client.login();
-
-    }
-
-    @Override
-    public void sendMessage(Message message) throws IOException {
-
-    }
-
-    @Override
-    public void receiveMessage(Message message) {
-
-    }
-
-    @Override
-    public void rawReceive(String input) {
-
-    }
-
-    @Override
-    public boolean deleteMessage() {
-        return false;
-    }
-
-    @Override
-    public boolean editMessage() {
-        return false;
-    }
-
-    @Override
-    public void listen() {
-
-    }
-
-    @Override
-    public void joinRoom(long id) {
-
-    }
-
-    @Override
-    public void leaveRoom(long id) {
 
     }
 

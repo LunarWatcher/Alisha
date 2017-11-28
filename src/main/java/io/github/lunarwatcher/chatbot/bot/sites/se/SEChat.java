@@ -143,46 +143,6 @@ public class SEChat implements Chat {
         thread.start();
     }
 
-
-    public void listen(){
-
-    }
-
-    @Override
-    public void sendMessage(Message message) {
-
-    }
-
-    @Override
-    public void receiveMessage(Message message) {
-
-    }
-
-    @Override
-    public void rawReceive(String input) {
-
-    }
-
-    @Override
-    public boolean deleteMessage() {
-        return false;
-    }
-
-    @Override
-    public boolean editMessage() {
-        return false;
-    }
-
-    @Override
-    public void joinRoom(long id) {
-
-    }
-
-    @Override
-    public void leaveRoom(long id) {
-
-    }
-
     public void kill(){
         killed = true;
     }
