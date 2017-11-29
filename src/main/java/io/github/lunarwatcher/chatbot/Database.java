@@ -37,6 +37,8 @@ public class Database {
         
         if (Files.exists(file)) {
             load();
+        }else{
+            Files.createFile(file);
         }
     }
 

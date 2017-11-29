@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.annotation.JsonAppend;
 import io.github.lunarwatcher.chatbot.bot.chat.Message;
 import io.github.lunarwatcher.chatbot.bot.chat.SEEvents;
 import io.github.lunarwatcher.chatbot.bot.command.CommandCenter;
+import io.github.lunarwatcher.chatbot.bot.commands.BotConfig;
+import io.github.lunarwatcher.chatbot.bot.exceptions.RoomNotFoundException;
 import io.github.lunarwatcher.chatbot.utils.Http;
 import io.github.lunarwatcher.chatbot.utils.Utils;
 import lombok.AllArgsConstructor;
@@ -27,7 +29,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class SERoom implements Closeable {
-    @Getter
     private int id;
     private SEChat parent;
     @Getter
@@ -42,7 +43,11 @@ public class SERoom implements Closeable {
 
         Http.Response connect = parent.getHttp().get(SEEvents.getRoom(parent.getSite().getUrl(), id));
         if(connect.getStatusCode() == 404){
-            throw new IllegalArgumentException("SERoom not found!");
+            throw new RoomNotFoundException("SERoom not found!");
+        }
+
+        if(!connect.getBody().contains("<textarea id=\"input\">")){
+            throw new RoomNotFoundException("No write access in the room!");
         }
         fkey = Utils.parseHtml(connect.getBody());
 
@@ -57,7 +62,6 @@ public class SERoom implements Closeable {
             @Override
             public void onOpen(Session session, EndpointConfig config) {
                 session.addMessageHandler(String.class, SERoom.this::receiveMessage);
-                System.out.println("Connected to " + SERoom.this.parent.getName());
             }
 
             @Override
@@ -220,7 +224,7 @@ public class SERoom implements Closeable {
 
     @Override
     public void close() throws IOException {
-        //Empty
+        session.close();
     }
 
     @AllArgsConstructor
@@ -245,5 +249,9 @@ public class SERoom implements Closeable {
             }
         }
         return false;
+    }
+
+    public int getId(){
+        return id;
     }
 }

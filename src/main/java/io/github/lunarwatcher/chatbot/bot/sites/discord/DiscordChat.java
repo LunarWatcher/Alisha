@@ -3,19 +3,19 @@ package io.github.lunarwatcher.chatbot.bot.sites.discord;
 import io.github.lunarwatcher.chatbot.Database;
 import io.github.lunarwatcher.chatbot.Site;
 import io.github.lunarwatcher.chatbot.bot.chat.BMessage;
-import io.github.lunarwatcher.chatbot.bot.chat.Message;
 import io.github.lunarwatcher.chatbot.bot.command.CommandCenter;
 import io.github.lunarwatcher.chatbot.bot.commands.AbstractCommand;
-import io.github.lunarwatcher.chatbot.bot.commands.Command;
+import io.github.lunarwatcher.chatbot.bot.commands.BotConfig;
+import io.github.lunarwatcher.chatbot.bot.commands.User;
 import io.github.lunarwatcher.chatbot.bot.sites.Chat;
+import io.github.lunarwatcher.chatbot.utils.Utils;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import sx.blah.discord.api.ClientBuilder;
 import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.api.events.EventSubscriber;
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent;
-import sx.blah.discord.handle.obj.IGuild;
+import sx.blah.discord.handle.obj.IChannel;
 
 import java.io.IOException;
 import java.util.*;
@@ -33,26 +33,32 @@ public class DiscordChat implements Chat{
     private Database db;
     public static Map<String, Pattern> regMatch = new HashMap<>();
     private List<RMatch> regex;
+    private List<IChannel> channels;
+    private BotConfig config;
 
     public DiscordChat(Site site, Properties botProps, Database db) throws IOException {
         this.site = site;
         this.db = db;
         this.botProps = botProps;
         logIn();
-        commands = new CommandCenter(botProps);
-        commands.loadDiscord();
+        commands = new CommandCenter(botProps, false);
+        commands.loadDiscord(this);
         commands.loadNSFW();
 
-        regex = new ArrayList<>();
+        channels = new ArrayList<>();
 
+        regex = new ArrayList<>();
+        config = new BotConfig(site.getName());
+
+        load();
     }
 
     public void load(){
-
+        Utils.loadConfig(config, db);
     }
 
     public void save(){
-
+        Utils.saveConfig(config, db);
     }
 
     @Override
@@ -89,12 +95,31 @@ public class DiscordChat implements Chat{
                 }
             }else {
                 try {
-                    List<BMessage> replies = commands.parseMessage(msg);
+                    IChannel channel = null;
+
+                    for(IChannel chnl : channels){
+                        if(chnl.getLongID() == event.getChannel().getLongID()){
+                            channel = chnl;
+                            break;
+                        }
+                    }
+
+                    if(channel == null){
+                        channels.add(event.getChannel());
+                    }
+
+                    int index = 0;
+                    for(int i = 0; i < channels.size(); i++){
+                        if(channels.get(i).getLongID() == event.getChannel().getLongID()){
+                            index = i;
+                            break;
+                        }
+                    }
+
+                    User user = new User(event.getAuthor().getLongID(), event.getAuthor().getName(), index);
+                    List<BMessage> replies = commands.parseMessage(msg, user);
                     if(replies == null){
-                        if(msg.contains("slut") && msg.contains("zoe")){
-                            event.getChannel().sendMessage("Fuck you :D");
-                        }else
-                            event.getChannel().sendMessage("Look up the manual maybe?");
+                        event.getChannel().sendMessage("Look up the manual maybe?");
                     }else {
                         for (BMessage r : replies) {
                             event.getChannel().sendMessage(r.content);
@@ -123,6 +148,11 @@ public class DiscordChat implements Chat{
             u.match(event.getMessage().getContent());
 
         }
+    }
+
+    @Override
+    public BotConfig getConfig() {
+        return config;
     }
 
     public class RMatch{
@@ -185,8 +215,12 @@ public class DiscordChat implements Chat{
             super("stats", null, "Get the status for a user", TRIGGER + "stats <username>");
         }
         @Override
-        public BMessage handleCommand(@NotNull String input) {
+        public BMessage handleCommand(@NotNull String input, @NotNull User user) {
             return null;
         }
+    }
+
+    public String getName(){
+        return site.getName();
     }
 }

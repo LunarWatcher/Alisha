@@ -1,6 +1,7 @@
 package io.github.lunarwatcher.chatbot;
 
 import io.github.lunarwatcher.chatbot.bot.Bot;
+import io.github.lunarwatcher.chatbot.bot.ui.UI;
 import io.github.lunarwatcher.chatbot.utils.Utils;
 
 import java.io.*;
@@ -125,13 +126,41 @@ public class BotCore {
         }
         Path db = Paths.get(database);
         Database jsonDB = new Database(db);
+        // jsonDB.commit();
         bot = new Bot(jsonDB, botProps, sites);
         bot.initialize();
 
+
         //Detect shutdown and save whatever is needed
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            //WARNING: This does not work when the IDE kills the process. It only works when the app is terminated
+            //in a regular fashion (through System.exit or having no threads running)
+            System.out.println("Shutdown detected. Saving...");
             bot.kill();
         }));
+
+        //UI.database = jsonDB;
+        //UI.bot = bot;
+        //UI.botProps = botProps;
+//
+        //new UI(args);
+        boolean r = true;
+        String in;
+        while(r){
+            System.out.println();
+            System.out.print("Argument: ");
+            in = scanner.nextLine();
+            if(in.equals("save")){
+                bot.save();
+                System.out.println("Saved");
+            }else if(in.equals("exit")){
+                bot.save();
+                System.exit(0);
+            }else{
+                System.out.println();
+                System.out.print("Not a valid argument");
+            }
+        }
     }
 
     public static void dropPrep(){
@@ -144,4 +173,5 @@ public class BotCore {
         System.out.println("    -reset - resets the database to the default one");
         System.out.println("###########################");
     }
+
 }

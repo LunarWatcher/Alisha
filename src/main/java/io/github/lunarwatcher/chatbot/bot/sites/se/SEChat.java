@@ -8,6 +8,9 @@ import io.github.lunarwatcher.chatbot.bot.chat.BMessage;
 import io.github.lunarwatcher.chatbot.bot.chat.Message;
 import io.github.lunarwatcher.chatbot.bot.chat.SEEvents;
 import io.github.lunarwatcher.chatbot.bot.command.CommandCenter;
+import io.github.lunarwatcher.chatbot.bot.commands.BotConfig;
+import io.github.lunarwatcher.chatbot.bot.commands.User;
+import io.github.lunarwatcher.chatbot.bot.exceptions.RoomNotFoundException;
 import io.github.lunarwatcher.chatbot.bot.sites.Chat;
 import io.github.lunarwatcher.chatbot.utils.Http;
 import io.github.lunarwatcher.chatbot.utils.Utils;
@@ -16,10 +19,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 
 import javax.websocket.WebSocketContainer;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -51,6 +51,7 @@ public class SEChat implements Chat {
     public List<SERoom.UserAction> actions = new ArrayList<>();
     public List<Message> pingMessages = new ArrayList<>();
 
+    private List<Integer> roomsToleave = new ArrayList<>();
     List<SERoom> rooms = new ArrayList<>();
     SEThread thread;
     CommandCenter commands;
@@ -59,6 +60,7 @@ public class SEChat implements Chat {
     private Database db;
     @Getter
     private volatile boolean killed = false;
+    private BotConfig config;
 
     public SEChat(Site site, CloseableHttpClient httpClient, WebSocketContainer webSocket, Properties botProps, Database database) throws IOException {
         this.site = site;
@@ -66,16 +68,12 @@ public class SEChat implements Chat {
         this.httpClient = httpClient;
         this.webSocket = webSocket;
 
-        for(Map.Entry<Object, Object> props : botProps.entrySet()){
-            if(props.getKey().toString().equals("bot.site.homes." + site.getName())){
-                String[] values = props.getValue().toString().split(",");
-                for(String x : values){
-                    System.out.println(x);
-                    joining.add(Integer.parseInt(x));
-                }
-            }
-        }
+        config = new BotConfig(site.getName());
+        load();
 
+        for(Integer room : config.getHomes()){
+            joining.add(room);
+        }
         //Ignore unchecked cast warning
         List<Integer> data = (List<Integer>) database.get(getName() + "-rooms");
         if(data != null){
@@ -83,17 +81,19 @@ public class SEChat implements Chat {
         }
         data = null;
 
-        commands = new CommandCenter(botProps);
+        commands = new CommandCenter(botProps, true);
+        commands.loadSE(this);
         http = new Http(httpClient);
+
         logIn();
         run();
+
     }
 
     public void logIn() throws IOException {
         if(site == null)
             return;
         String targetUrl = (site.getName().equals("stackexchange") ? SEEvents.getSELogin(site.getUrl()) : SEEvents.getLogin(site.getUrl()));
-        System.out.println(targetUrl);
 
         if (site.getName().equals("stackexchange")) {
             Http.Response se = http.post(targetUrl, "from", "https://stackexchange.com/users/login#log-in");
@@ -167,8 +167,9 @@ public class SEChat implements Chat {
                 while (!killed) {
                     for (Message m : newMessages) {
                         if (CommandCenter.isCommand(m.content)) {
-                            List<BMessage> replies = commands.parseMessage(m.content);
-                            if(replies != null){
+                            User user = new User(m.userid, m.username, m.roomID);
+                            List<BMessage> replies = commands.parseMessage(m.content, user);
+                            if(replies != null && getRoom(m.roomID) != null){
                                 for(BMessage bm : replies){
                                     if(bm.replyIfPossible){
                                         getRoom(m.roomID).reply(bm.content, m.messageID);
@@ -198,6 +199,18 @@ public class SEChat implements Chat {
                     } catch (InterruptedException e) {
                     }
                 }
+
+                if(roomsToleave.size() != 0){
+                    for(int r = roomsToleave.size() - 1; r >= 0; r--){
+                        for(int i = rooms.size() - 1; i >= 0; i--){
+                            if(rooms.get(i).getId() == roomsToleave.get(r)){
+                                roomsToleave.remove(r);
+                                rooms.get(i).close();
+                                rooms.remove(i);
+                            }
+                        }
+                    }
+                }
             }catch(IOException e){
                 if(retries < 10) {
                     run();
@@ -218,6 +231,47 @@ public class SEChat implements Chat {
         return null;
     }
 
+    public List<SERoom> getRooms(){
+        return rooms;
+    }
+
+    public BMWrapper joinRoom(int rid){
+        try {
+            for(SERoom room : rooms){
+                if(room.getId() == rid){
+                    return new BMWrapper("I'm already there...", true, true, ExceptionClass.ALREADY_JOINED);
+                }
+            }
+            SERoom room = new SERoom(rid, this);
+            rooms.add(room);
+
+            return new BMWrapper(Utils.getRandomJoinMessage(), true, false, ExceptionClass.NONE);
+
+        }catch(IOException e){
+            return new BMWrapper("An IOException occured when attempting to join", true, true, ExceptionClass.IO);
+        }catch(RoomNotFoundException e){
+            return new BMWrapper("That's not a real room or I can't write there", true, true, ExceptionClass.NOT_FOUND);
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+
+        return new BMWrapper("Something bad happened when joining the room", true, true, ExceptionClass.GENERAL);
+    }
+
+    public boolean leaveRoom(int rid){
+        try{
+            for(int i = rooms.size() - 1; i >= 0; i--){
+                if(rooms.get(i).getId() == rid){
+                    roomsToleave.add(rooms.get(i).getId());
+                    return true;
+                }
+            }
+        }catch(Exception e){
+
+        }
+        return false;
+    }
+
     public void save(){
         if(db != null){
             List<Integer> rooms = new ArrayList<>();
@@ -227,10 +281,34 @@ public class SEChat implements Chat {
 
             db.put(getName() + "-rooms", rooms);
         }
-
+        Utils.saveConfig(config, db);
     }
 
     public void load(){
-
+        Utils.loadConfig(config, db);
     }
+
+    public BotConfig getConfig(){
+        return config;
+    }
+
+    public class BMWrapper extends BMessage{
+        public boolean exception;
+        public ExceptionClass exceptionType;
+
+        public BMWrapper(String content, boolean rip, boolean exception, ExceptionClass exceptionType) {
+            super(content, rip);
+            this.exception = exception;
+            this.exceptionType = exceptionType;
+        }
+    }
+
+    public enum ExceptionClass{
+        NOT_FOUND,
+        IO,
+        GENERAL,
+        ALREADY_JOINED,
+        NONE//To NPE's
+    }
+
 }

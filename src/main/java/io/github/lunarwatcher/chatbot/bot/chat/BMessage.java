@@ -10,6 +10,11 @@ public class BMessage {
     public String content;
     public boolean replyIfPossible;
 
+    /**
+     *
+     * @param content The content of a message to send
+     * @param rip replyIfPossible - replies to a message in supported platforms
+     */
     public BMessage(String content, boolean rip){
         this.content = content;
         this.replyIfPossible = rip;

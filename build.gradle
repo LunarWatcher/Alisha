@@ -25,9 +25,6 @@ repositories {
     maven {
         url  "https://jitpack.io"
     }
-    maven{
-        url 'https://raw.githubusercontent.com/LunarWatcher/mvn-repo/master/release/'
-    }
     jcenter()
 }
 
@@ -47,7 +44,11 @@ dependencies {
     compile group: 'org.apache.httpcomponents', name: 'httpcore', version: '4.4.8'
 
     compile group: 'org.glassfish.tyrus.bundles', name: 'tyrus-standalone-client-jdk', version: '1.13.1'
-    compile "io.github.lunarwatcher.jvmi18n:jvmi18n:1.0.1"
+
+    //UI
+    compile 'com.jfoenix:jfoenix:1.10.0'
+    compile 'io.datafx:datafx:8.0.1'
+    compile 'io.datafx:flow:8.0.1'
 
 }
 

@@ -5,16 +5,17 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.lunarwatcher.chatbot.bot.chat.BMessage;
 import io.github.lunarwatcher.chatbot.bot.chat.Message;
-import io.github.lunarwatcher.chatbot.bot.commands.Command;
-import io.github.lunarwatcher.chatbot.bot.commands.HelpCommand;
-import io.github.lunarwatcher.chatbot.bot.commands.ShrugCommand;
+import io.github.lunarwatcher.chatbot.bot.commands.*;
 import io.github.lunarwatcher.chatbot.bot.sites.discord.DiscordChat;
+import io.github.lunarwatcher.chatbot.bot.sites.se.SEChat;
 import lombok.Getter;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+
+import static io.github.lunarwatcher.chatbot.Constants.RELOCATION_VOTES;
 
 public class CommandCenter {
     public static String TRIGGER;
@@ -23,20 +24,21 @@ public class CommandCenter {
     public List<Command> commands;
     //List<Listener> listeners;
 
-    public CommandCenter(Properties botProps) {
+    public CommandCenter(Properties botProps, boolean shrugAlt) {
         TRIGGER = botProps.getProperty("bot.trigger");
         commands = new ArrayList<>();
         commands.add(new HelpCommand(this));
-        commands.add(new ShrugCommand());
+        commands.add(new ShrugCommand(shrugAlt ? "¯\\\\_(ツ)_/¯" : "¯\\_(ツ)_/¯"));
 
         //listeners = new ArrayList<>();
     }
 
-    public void loadSE(){
-
+    public void loadSE(SEChat chat){
+        commands.add(new Summon(RELOCATION_VOTES, chat));
+        commands.add(new UnSummon(RELOCATION_VOTES, chat));
     }
 
-    public void loadDiscord(){
+    public void loadDiscord(DiscordChat chat){
         commands.add(new DiscordChat.Match());
     }
     /**
@@ -56,7 +58,7 @@ public class CommandCenter {
 
     }
 
-    public List<BMessage> parseMessage(String message) throws IOException{
+    public List<BMessage> parseMessage(String message, User user) throws IOException{
         if(message == null)
             return null;
 
@@ -69,7 +71,7 @@ public class CommandCenter {
         List<BMessage> replies = new ArrayList<>();
 
         for(Command c : commands){
-            BMessage x = c.handleCommand(message);
+            BMessage x = c.handleCommand(message, user);
             if(x != null) {
                 replies.add(x);
             }
