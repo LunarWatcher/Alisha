@@ -19,6 +19,10 @@ The bot is a WIP, so more features will be added. Most notably, more commands ar
 * Random number
 * stackexchange question search
 * LMGTFY
+* silence
+    * Ignores specific users for a short period of time, **not to be confused with ban**.
+    * Ignore all users for a short period of time
+* join/leave (SE only)
 
 In addition to commands, there are other features that need implementation:
 
