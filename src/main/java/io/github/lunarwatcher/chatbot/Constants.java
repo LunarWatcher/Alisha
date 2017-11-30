@@ -1,6 +1,8 @@
 package io.github.lunarwatcher.chatbot;
 
 public final class Constants {
+    public static final boolean AUTO_BOOT = false;
+    public static boolean LEAVE_ROOM_ON_UNHOME;
     public static final String DATE_FORMAT = "dd-MM-yyyy HH:mm:ss";
     public static final String IDENTIFIER_USERNAME = "name";
     public static final String IDENTIFIER_EMAIL = "email";
@@ -26,6 +28,12 @@ public final class Constants {
             "Alright, left the room"
     };
 
+    public static final String[] hrMessages = {
+            "I can't *just* leave my HOME!",
+            "You can't make me",
+            "There are still quests to finish, I can't leave yet!",
+            "Yeah... not doing that."
+    };
     public static String BANNED_USERS(String site){
         return "banned-users-" + site;
     }

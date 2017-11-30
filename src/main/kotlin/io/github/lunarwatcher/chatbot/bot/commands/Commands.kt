@@ -1,15 +1,11 @@
 package io.github.lunarwatcher.chatbot.bot.commands
 
+import com.google.common.base.Strings.repeat
 import io.github.lunarwatcher.chatbot.Constants
 import io.github.lunarwatcher.chatbot.bot.ReplyBuilder
 import io.github.lunarwatcher.chatbot.bot.chat.BMessage
 import io.github.lunarwatcher.chatbot.bot.command.CommandCenter
 import io.github.lunarwatcher.chatbot.bot.command.CommandCenter.TRIGGER
-import io.github.lunarwatcher.chatbot.bot.command.CommandCenter.isCommand
-import io.github.lunarwatcher.chatbot.bot.sites.se.SEChat
-import io.github.lunarwatcher.chatbot.utils.Utils
-import io.github.lunarwatcher.chatbot.utils.Utils.assertion
-import java.util.*
 
 interface Command{
     /**
@@ -54,8 +50,8 @@ abstract class AbstractCommand(var nm: String, var als: Array<String>?, var desc
     override fun getAliases(): Array<String>? = als;
     override fun matchesCommand(input: String): Boolean{
         val input = input.toLowerCase();
-
-        if(input.startsWith(nm)){
+        val split = input.split(" ");
+        if(split[0] == nm.toLowerCase()){
             return true;
         }
         if(als != null) {
@@ -63,7 +59,7 @@ abstract class AbstractCommand(var nm: String, var als: Array<String>?, var desc
                 return false;
             }else{
                 for(alias: String in als ?: return false){
-                    if(input.startsWith(alias)){
+                    if(split[0] == alias.toLowerCase()){
                         return true;
                     }
                 }
@@ -84,18 +80,42 @@ class HelpCommand(var center: CommandCenter) : AbstractCommand("help", null,
 
 
         //No arguments supplied
-        val reply: ReplyBuilder = ReplyBuilder();
-        reply.fixedInput().append("#################### Commands ####################")
-                .nl().fixedInput().append("--------------------------------------------------")
-                .nl();
-        for (command: Command in center.commands) {
-            reply.fixedInput().append(command.getName()).fixedInput().append("|").fixedInput().append(command.getDescription()).nl()
+        val reply = ReplyBuilder();
+        reply.fixedInput().append("###################### Help ######################")
+                .nl().fixedInput().nl();
+        val commands: MutableMap<String, String> = mutableMapOf()
+        val names: MutableList<String> = mutableListOf()
+
+        if(!center.commands.isEmpty()) {
+            reply.fixedInput().append("==================== Commands").nl()
+            for (command: Command in center.commands) {
+                commands.put(command.getName(), command.getDescription());
+            }
         }
 
+        names.addAll(commands.keys);
+        val maxLen = getMaxLen(names);
+
+        for(command in commands){
+            reply.fixedInput().append(TRIGGER + command.key);
+            reply.append(repeat(" ", maxLen - command.key.length + 2) + "| ")
+                    .append(command.value).nl();
+        }
         return BMessage(reply.toString(), false);
 
     }
 
+}
+
+fun getMaxLen(list: MutableList<String>) : Int{
+    var longest = 0;
+
+    for(item in list){
+        val len = item.length;
+        if(len > longest)
+            longest = len;
+    }
+    return longest;
 }
 
 class ShrugCommand(val shrug: String): AbstractCommand("shrug", arrayOf("dunno", "what"), "Shrugs", "Use `" + TRIGGER + "shrug` to use the command"){
@@ -104,143 +124,6 @@ class ShrugCommand(val shrug: String): AbstractCommand("shrug", arrayOf("dunno",
             return null;
         }
         return BMessage(shrug, false);
-    }
-}
-
-class Summon(val votes: Int, val chat: SEChat) : AbstractCommand("summon", arrayOf("join"), "Summon the bot to a room", "Joins a room after $votes votes"){
-    var vts: MutableMap<Int, MutableList<Long>> = mutableMapOf();
-
-    override fun handleCommand(input: String, user: User): BMessage? {
-
-        if(!matchesCommand(input)){
-            return null;
-        }
-
-        var votes = this.votes;
-
-        if(Utils.isAdmin(user.userID, chat.config))
-            votes = 1;
-
-        try{
-            val raw = input.split(" ")[1];
-            val iRoom = raw.toInt();
-
-            for(room in chat.getRooms()){
-                if(room.id == iRoom){
-                    return BMessage("I'm already in that room", true);
-                }
-            }
-
-            var users: MutableList<Long>? = vts.get(iRoom);
-
-            if(users == null){
-                vts.put(iRoom, mutableListOf(user.userID))
-                users = vts.get(iRoom);
-
-            }else{
-
-                for(uid in users){
-                    if(uid == user.userID){
-                        return BMessage("Can't vote multiple times for joining :D", true);
-                    }
-                }
-                users.add(user.userID);
-                vts.put(iRoom,users);
-            }
-
-            if(users!!.size >= votes){
-                var message: SEChat.BMWrapper = chat.joinRoom(iRoom);
-                vts.remove(iRoom);
-
-                if(!message.exception) {
-                    return message;
-                }else{
-
-                    return BMessage(Utils.getRandomJoinMessage(), true)
-                }
-
-            }else{
-                return BMessage((votes - users.size).toString() + " more " + (if(votes - users.size == 1 ) "vote" else "votes") + " required", true);
-            }
-
-        }catch (e: IndexOutOfBoundsException){
-            return BMessage("You have to specify a room...", true);
-        }catch(e: ClassCastException){
-            return BMessage("That's not a valid room ID", true);
-        }catch(e: Exception){
-            return BMessage("Something bad happened :/", true);
-        }
-    }
-}
-
-class UnSummon(val votes: Int, val chat: SEChat) : AbstractCommand("unsummon", arrayOf("leave"), "Makes the bot leave a specified room", "Leaves a room after $votes votes"){
-    var vts: MutableMap<Int, MutableList<Long>> = mutableMapOf();
-
-    override fun handleCommand(input: String, user: User): BMessage? {
-
-        if(!matchesCommand(input)){
-            return null;
-        }
-
-        var votes = this.votes;
-
-        if(Utils.isAdmin(user.userID, chat.config))
-            votes = 1;
-
-        try{
-            val raw = input.split(" ")[1];
-            val iRoom = raw.toInt();
-
-            var match = false;
-
-            for(room in chat.getRooms()){
-                if(room.id == iRoom){
-                    match = true;
-                }
-            }
-
-            if(match == false){
-                return BMessage("I'm not in that room...", true);
-            }
-
-            var users: MutableList<Long>? = vts.get(iRoom);
-
-            if(users == null){
-                vts.put(iRoom, mutableListOf(user.userID))
-                users = vts.get(iRoom);
-
-            }else{
-
-                for(uid in users){
-                    if(uid == user.userID){
-                        return BMessage("Can't vote multiple times for leaving :D", true);
-                    }
-                }
-                users.add(user.userID);
-                vts.put(iRoom,users);
-            }
-
-            if(users!!.size >= votes){
-                val succeeded = chat.leaveRoom(iRoom);
-
-                vts.remove(iRoom);
-                if(!succeeded){
-                    return BMessage("Something happened when trying to leave", true);
-                }else{
-                    return BMessage(Utils.getRandomJoinMessage(), true)
-                }
-
-            }else{
-                return BMessage((votes - users.size).toString() + " more " + (if(votes - users.size == 1 ) "vote" else "votes") + " required", true);
-            }
-
-        }catch (e: IndexOutOfBoundsException){
-            return BMessage("You have to specify a room...", true);
-        }catch(e: ClassCastException){
-            return BMessage("That's not a valid room ID", true);
-        }catch(e: Exception){
-            return BMessage("Something bad happened :/", true);
-        }
     }
 }
 

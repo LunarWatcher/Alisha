@@ -45,6 +45,8 @@ dependencies {
 
     compile group: 'org.glassfish.tyrus.bundles', name: 'tyrus-standalone-client-jdk', version: '1.13.1'
 
+    compile 'com.google.guava:guava:23.5-jre'
+
     //UI
     compile 'com.jfoenix:jfoenix:1.10.0'
     compile 'io.datafx:datafx:8.0.1'

@@ -3,7 +3,8 @@ package io.github.lunarwatcher.chatbot.utils;
 import io.github.lunarwatcher.chatbot.Constants;
 import io.github.lunarwatcher.chatbot.Database;
 import io.github.lunarwatcher.chatbot.bot.commands.BotConfig;
-import io.github.lunarwatcher.chatbot.bot.commands.UserInfo;
+import io.github.lunarwatcher.chatbot.bot.sites.Chat;
+import io.github.lunarwatcher.chatbot.bot.sites.se.SEChat;
 import org.jetbrains.annotations.Nullable;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.util.DiscordException;
@@ -12,6 +13,7 @@ import sx.blah.discord.util.RequestBuffer;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -155,4 +157,44 @@ public final class Utils {
         return false;
     }
 
+    public static String getRandomHRMessage(){
+        return Constants.hrMessages[random.nextInt(Constants.hrMessages.length)];
+    }
+
+    public static boolean isHardcodedRoom(int room, SEChat site){
+        for(Integer r : site.hardcodedRooms){
+            if(r == room)
+                return true;
+        }
+        return false;
+    }
+
+    public static boolean isHardcodedAdmin(long user, Chat chat){
+        for(Long x : chat.getHardcodedAdmins()){
+            if(x == user)
+                return true;
+        }
+
+        return false;
+    }
+
+    public static void loadHardcodedAdmins(Chat c){
+
+        for(Map.Entry<Object, Object> s : c.getBotProps().entrySet()){
+            String key = (String) s.getKey();
+
+            if(key.equals("bot."+ c.getSite().getName() + ".admin")){
+                String[] rooms = ((String) s.getValue()).split(",");
+
+                for(String room : rooms){
+                    try{
+                        c.getHardcodedAdmins().add(Long.parseLong(room));
+                    }catch(ClassCastException e){
+                        System.err.println("The room supplied could not be parsed as a number: " + room);
+                    }
+                }
+                break;
+            }
+        }
+    }
 }

@@ -36,6 +36,8 @@ public class CommandCenter {
     public void loadSE(SEChat chat){
         commands.add(new Summon(RELOCATION_VOTES, chat));
         commands.add(new UnSummon(RELOCATION_VOTES, chat));
+        commands.add(new AddHome(chat));
+        commands.add(new RemoveHome(chat));
     }
 
     public void loadDiscord(DiscordChat chat){

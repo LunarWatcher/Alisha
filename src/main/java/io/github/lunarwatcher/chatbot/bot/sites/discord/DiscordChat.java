@@ -35,6 +35,8 @@ public class DiscordChat implements Chat{
     private List<RMatch> regex;
     private List<IChannel> channels;
     private BotConfig config;
+    public List<Long> hardcodedAdmins = new ArrayList<>();
+
 
     public DiscordChat(Site site, Properties botProps, Database db) throws IOException {
         this.site = site;
@@ -51,6 +53,8 @@ public class DiscordChat implements Chat{
         config = new BotConfig(site.getName());
 
         load();
+
+        Utils.loadHardcodedAdmins(this);
     }
 
     public void load(){
@@ -222,5 +226,16 @@ public class DiscordChat implements Chat{
 
     public String getName(){
         return site.getName();
+    }
+
+    public List<Long> getHardcodedAdmins(){
+        return hardcodedAdmins;
+    }
+
+    public Properties getBotProps(){
+        return botProps;
+    }
+    public Site getSite(){
+        return site;
     }
 }

@@ -1,11 +1,5 @@
 package io.github.lunarwatcher.chatbot.bot.commands
 
-import io.github.lunarwatcher.chatbot.Constants
-
-abstract class MetaCommand(var cmdName: String, var cmdAlias: Array<String>?, var cmdDesc: String?, var cmdHelp: String?, var config: BotConfig)
-    : AbstractCommand(cmdName, cmdAlias, cmdDesc, cmdHelp);
-
-
 class BotConfig{
     val site: String;
     val admins: MutableList<Long>;
@@ -22,21 +16,25 @@ class BotConfig{
         homes = mutableListOf()
     }
 
-    fun addHomeRoom(newRoom: Int){
+    fun addHomeRoom(newRoom: Int) : Boolean{
         for(home in homes){
             if(home == newRoom)
-                return;
+                return false;
         }
 
         homes.add(newRoom);
+        return true;
     }
 
-    fun removeHomeRoom(rr: Int){
+    fun removeHomeRoom(rr: Int) : Boolean{
         for(i in (homes.size - 1)downTo 0){
             if(homes[i] == rr){
-                homes.remove(homes[i])
+                homes.removeAt(i)
+                return true;
             }
         }
+
+        return false;
     }
 
     fun addAdmin(newUser: Long){
@@ -110,5 +108,3 @@ class BotConfig{
     }
 
 }
-class UserInfo(val uid: Long, val unm: String)
-

@@ -1,16 +1,18 @@
 package io.github.lunarwatcher.chatbot;
 
 import io.github.lunarwatcher.chatbot.bot.Bot;
-import io.github.lunarwatcher.chatbot.bot.ui.UI;
 import io.github.lunarwatcher.chatbot.utils.Utils;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
-import static io.github.lunarwatcher.chatbot.utils.Utils.*;
 import static io.github.lunarwatcher.chatbot.Constants.*;
+import static io.github.lunarwatcher.chatbot.utils.Utils.assertion;
 
 public class BotCore {
     /**
@@ -77,9 +79,13 @@ public class BotCore {
         String input;
         String database = DEFAULT_DATABASE;
 
+        String LROUH = (String) botProps.get("bot.home.leave");
+        if(LROUH != null)
+            Constants.LEAVE_ROOM_ON_UNHOME = Boolean.parseBoolean(LROUH);
+
         dropPrep();
         boolean ti = true;//TODO change to true
-        while(ti){
+        while(ti && !Constants.AUTO_BOOT){
             System.out.print("Command: ");
             input = scanner.nextLine();
             if(input.equals("start") || input.equals("-b")){

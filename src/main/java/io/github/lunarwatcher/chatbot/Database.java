@@ -84,9 +84,13 @@ public class Database {
             return map;
         }else if (node.isInt()) {
             return node.asInt();
+        }else if(node.isLong()){
+            return node.asLong();
         }else if (node.isNull()) {
             return null;
         }
+
+
 
         String text = node.asText();
 
@@ -191,6 +195,10 @@ public class Database {
             return;
         }else if (value instanceof Integer) {
             Integer integer = (Integer) value;
+            generator.writeNumber(integer);
+            return;
+        }else if (value instanceof Long) {
+            Long integer = (Long) value;
             generator.writeNumber(integer);
             return;
         }else if (value == null) {

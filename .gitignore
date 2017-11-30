@@ -73,5 +73,7 @@ crashlytics.properties
 crashlytics-build.properties
 fabric.properties
 
+# The credentials file. Excluded for obvious reasons
 creds.properties
+# The (main) storage file. Excluded as one bots memory should remain closed
 memory.json

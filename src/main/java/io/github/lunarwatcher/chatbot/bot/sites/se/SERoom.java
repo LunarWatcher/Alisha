@@ -170,6 +170,9 @@ public class SERoom implements Closeable {
                 }else if(eventCode == 10){
                     //The message was deleted. Ignore it
                     return;
+                }else if(eventCode == 15){
+                    close();
+                    parent.getRooms().remove(this);
                 }
                 // Event reference sheet:,
 
@@ -183,8 +186,10 @@ public class SERoom implements Closeable {
                 //8: ping - if called, ensure that the content does not contain a ping to the bot name if 1 is called
                 //9:
                 //10: deleted
-
+                //15: kicked
                 //17: Invite
+
+                //19: Moved
             }
 
         }catch(IOException e){
@@ -224,6 +229,7 @@ public class SERoom implements Closeable {
 
     @Override
     public void close() throws IOException {
+        parent.getHttp().post(SEEvents.leaveRoom(parent.getSite().getUrl(), id));
         session.close();
     }
 

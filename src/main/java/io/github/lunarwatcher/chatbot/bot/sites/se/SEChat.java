@@ -52,7 +52,7 @@ public class SEChat implements Chat {
     public List<Message> pingMessages = new ArrayList<>();
 
     private List<Integer> roomsToleave = new ArrayList<>();
-    List<SERoom> rooms = new ArrayList<>();
+    private List<SERoom> rooms = new ArrayList<>();
     SEThread thread;
     CommandCenter commands;
     List<Integer> joining = new ArrayList<>();
@@ -62,14 +62,57 @@ public class SEChat implements Chat {
     private volatile boolean killed = false;
     private BotConfig config;
 
+    public List<Integer> hardcodedRooms = new ArrayList<>();
+    public List<Long> hardcodedAdmins = new ArrayList<>();
+
+    public Properties botProps;
+
+    /*
+    # Deprecated
+bot.homes.stackoverflow=1
+bot.homes.metastackexchange=721
+bot.homes.stackexchange=1
+
+bot.home.leave=false
+
+# While the admins are stored in the database, these are the hard-coded ones that can't be removed
+bot.stackexchange.admin=165415
+bot.stackoverflow.admin=6296561
+bot.metastackexchange.admin=332043
+bot.discord.admin=363018555081359360
+     */
     public SEChat(Site site, CloseableHttpClient httpClient, WebSocketContainer webSocket, Properties botProps, Database database) throws IOException {
         this.site = site;
         this.db = database;
         this.httpClient = httpClient;
         this.webSocket = webSocket;
+        this.botProps = botProps;
 
         config = new BotConfig(site.getName());
         load();
+
+
+
+        for(Map.Entry<Object, Object> s : botProps.entrySet()){
+            String key = (String) s.getKey();
+
+            if(key.equals("bot.homes." + site.getName())){
+                String[] rooms = ((String) s.getValue()).split(",");
+
+                for(String room : rooms){
+                    try{
+                        hardcodedRooms.add(Integer.parseInt(room));
+                    }catch(ClassCastException e){
+                        System.err.println("The room supplied could not be parsed as a number: " + room);
+                    }
+                }
+                break;
+            }
+        }
+
+        Utils.loadHardcodedAdmins(this);
+
+        joining.addAll(hardcodedRooms);
 
         for(Integer room : config.getHomes()){
             joining.add(room);
@@ -129,7 +172,7 @@ public class SEChat implements Chat {
 
         try {
             for(int i = joining.size() - 1; i >= 0; i--){
-                rooms.add(new SERoom(joining.get(i), this));
+                addRoom(new SERoom(joining.get(i), this));
             }
         }catch(IllegalArgumentException e){
             System.out.println("Room not available!");
@@ -198,19 +241,26 @@ public class SEChat implements Chat {
                         retries--;
                     } catch (InterruptedException e) {
                     }
-                }
 
-                if(roomsToleave.size() != 0){
-                    for(int r = roomsToleave.size() - 1; r >= 0; r--){
-                        for(int i = rooms.size() - 1; i >= 0; i--){
-                            if(rooms.get(i).getId() == roomsToleave.get(r)){
-                                roomsToleave.remove(r);
-                                rooms.get(i).close();
-                                rooms.remove(i);
+                    if(roomsToleave.size() != 0){
+                        for(int r = roomsToleave.size() - 1; r >= 0; r--){
+                            if(r == 0 && roomsToleave.size() == 0)
+                                break;
+                            for(int i = rooms.size() - 1; i >= 0; i--){
+                                if(rooms.get(i).getId() == roomsToleave.get(r)){
+                                    int rtl = roomsToleave.get(r);
+                                    roomsToleave.remove(r);
+                                    rooms.get(i).close();
+                                    rooms.remove(i);
+                                    System.out.println("Left room " + rtl);
+                                    break;
+                                }
                             }
                         }
                     }
                 }
+
+
             }catch(IOException e){
                 if(retries < 10) {
                     run();
@@ -243,7 +293,7 @@ public class SEChat implements Chat {
                 }
             }
             SERoom room = new SERoom(rid, this);
-            rooms.add(room);
+            addRoom(room);
 
             return new BMWrapper(Utils.getRandomJoinMessage(), true, false, ExceptionClass.NONE);
 
@@ -309,6 +359,31 @@ public class SEChat implements Chat {
         GENERAL,
         ALREADY_JOINED,
         NONE//To NPE's
+    }
+
+    public boolean addRoom(SERoom room){
+        for(SERoom s : rooms){
+            if(s.getId() == room.getId()){
+                try {
+                    room.close();
+                }catch(IOException e){
+                    e.printStackTrace();
+                }
+
+                return false;
+            }
+        }
+
+        rooms.add(room);
+        return true;
+    }
+
+    public List<Long> getHardcodedAdmins(){
+        return hardcodedAdmins;
+    }
+
+    public Properties getBotProps(){
+        return botProps;
     }
 
 }
