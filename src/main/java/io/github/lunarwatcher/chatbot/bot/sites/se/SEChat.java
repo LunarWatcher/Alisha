@@ -110,6 +110,12 @@ bot.discord.admin=363018555081359360
             }
         }
 
+        for(Integer x : hardcodedRooms){
+            joining.add(x);
+            config.addHomeRoom(x);
+        }
+
+
         Utils.loadHardcodedAdmins(this);
 
         joining.addAll(hardcodedRooms);
@@ -209,6 +215,8 @@ bot.discord.admin=363018555081359360
             try {
                 while (!killed) {
                     for (Message m : newMessages) {
+                        if(m.userid == site.getConfig().getUserID())
+                            continue;
                         if (CommandCenter.isCommand(m.content)) {
                             User user = new User(m.userid, m.username, m.roomID);
                             List<BMessage> replies = commands.parseMessage(m.content, user);
@@ -230,17 +238,14 @@ bot.discord.admin=363018555081359360
                             }
                         }
                     }
-                    newMessages.clear();
+
 
                     for(SERoom.StarMessage sm : starredMessages){
 
                     }
-                    try {
-                        //Update once every second to avoid CPU eating
-                        Thread.sleep(1000);
-                        retries--;
-                    } catch (InterruptedException e) {
-                    }
+
+                    newMessages.clear();
+                    starredMessages.clear();
 
                     if(roomsToleave.size() != 0){
                         for(int r = roomsToleave.size() - 1; r >= 0; r--){
@@ -257,6 +262,13 @@ bot.discord.admin=363018555081359360
                                 }
                             }
                         }
+                    }
+
+                    try {
+                        //Update once every second to avoid CPU eating
+                        Thread.sleep(1000);
+                        retries--;
+                    } catch (InterruptedException e) {
                     }
                 }
 
@@ -309,6 +321,10 @@ bot.discord.admin=363018555081359360
     }
 
     public boolean leaveRoom(int rid){
+        for(Integer room : hardcodedRooms)
+            if(room == rid)
+                return false;
+
         try{
             for(int i = rooms.size() - 1; i >= 0; i--){
                 if(rooms.get(i).getId() == rid){

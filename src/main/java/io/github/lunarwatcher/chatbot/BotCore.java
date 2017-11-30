@@ -62,7 +62,7 @@ public class BotCore {
                     System.out.println("Invalid config for site " + name + "!");
                 }else {
                     System.out.println("Valid config for site " + name);
-                    SiteConfig siteConfig = new SiteConfig(username, password, email, userID);
+                    SiteConfig siteConfig = new SiteConfig(username, password, email, userID, true);//TODO replace last argument with loaded data
                     availableSites.add(new Site(name, url, siteConfig));
                 }
             }

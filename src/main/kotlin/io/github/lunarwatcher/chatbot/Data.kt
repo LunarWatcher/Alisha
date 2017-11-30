@@ -15,4 +15,4 @@ data class Site(var name: String, val url: String, val config: SiteConfig){
 /**
  * The account details for the site
  */
-data class SiteConfig(var username: String, var password: String, var email: String, var userID: Long);
+data class SiteConfig(var username: String, var password: String, var email: String, var userID: Long, var messageOnLeave: Boolean = true);

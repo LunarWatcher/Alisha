@@ -162,7 +162,7 @@ public final class Utils {
     }
 
     public static boolean isHardcodedRoom(int room, SEChat site){
-        for(Integer r : site.hardcodedRooms){
+        for(int r : site.hardcodedRooms){
             if(r == room)
                 return true;
         }
@@ -195,6 +195,10 @@ public final class Utils {
                 }
                 break;
             }
+        }
+
+        for(Long i : c.getHardcodedAdmins()){
+            c.getConfig().addAdmin(i);
         }
     }
 }

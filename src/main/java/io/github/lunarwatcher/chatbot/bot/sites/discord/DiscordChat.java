@@ -55,6 +55,8 @@ public class DiscordChat implements Chat{
         load();
 
         Utils.loadHardcodedAdmins(this);
+
+
     }
 
     public void load(){
@@ -179,6 +181,8 @@ public class DiscordChat implements Chat{
             occurences.put("lo+l", 0L);
             occurences.put("lmf*?ao+", 0L);
             occurences.put("(ha+(ha+)+)", 0L);
+            occurences.put(":sloth:", 0L);
+            occurences.put(":thinking:", 0L);
 
             if(regMatch.size() == 0){
                 for(Map.Entry<String, Long> occurence : occurences.entrySet()){
