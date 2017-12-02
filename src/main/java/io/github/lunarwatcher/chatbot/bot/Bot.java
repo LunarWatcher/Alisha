@@ -3,6 +3,7 @@ package io.github.lunarwatcher.chatbot.bot;
 
 import io.github.lunarwatcher.chatbot.Database;
 import io.github.lunarwatcher.chatbot.Site;
+import io.github.lunarwatcher.chatbot.bot.command.CommandCenter;
 import io.github.lunarwatcher.chatbot.bot.sites.Chat;
 import io.github.lunarwatcher.chatbot.bot.sites.discord.DiscordChat;
 import io.github.lunarwatcher.chatbot.bot.sites.se.SEChat;
@@ -52,15 +53,18 @@ public class Bot {
     public void kill(){
         System.out.println("Killing");
         save();
+        for(Chat s : chats) {
+            if (s instanceof SEChat) {
+                ((SEChat) s).leaveAll();
+            }
+        }
     }
 
     public void save(){
         for(Chat s : chats){
             s.save();
-            if(s instanceof SEChat){
-                ((SEChat) s).leaveAll();
-            }
         }
+        CommandCenter.save();
         database.commit();
     }
 

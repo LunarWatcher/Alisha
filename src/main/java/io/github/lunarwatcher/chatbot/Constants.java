@@ -35,6 +35,18 @@ public final class Constants {
             "There are still quests to finish, I can't leave yet!",
             "Yeah... not doing that."
     };
+
+    public static final String[] learnedMessages = {
+            "The more I learn, the better",
+            "Oh, THAT's how I do that!",
+            "I already knew that! Yeah... *coughs*"
+    };
+
+    public static final String[] forgotMessage = {
+            "Forgotten",
+            "I can't remember that one"
+    };
+
     public static String BANNED_USERS(String site){
         return "banned-users-" + site;
     }

@@ -96,22 +96,21 @@ public class SEChat implements Chat {
         }
 
         for(Integer x : hardcodedRooms){
-            joining.add(x);
+            join(x);
             config.addHomeRoom(x);
         }
 
 
         Utils.loadHardcodedAdmins(this);
 
-        joining.addAll(hardcodedRooms);
-
         for(Integer room : config.getHomes()){
-            joining.add(room);
+            join(room);
         }
         //Ignore unchecked cast warning
         List<Integer> data = (List<Integer>) database.get(getName() + "-rooms");
         if(data != null){
-            joining.addAll(data);
+            for(int x : data)
+                join(x);
         }else{
             //No current rooms
             if(config.getHomes().size() == 0) {
@@ -127,13 +126,17 @@ public class SEChat implements Chat {
 
 
 
-        commands = new CommandCenter(botProps, true, site.getName());
+        commands = new CommandCenter(botProps, true, site.getName(), db);
         commands.loadSE(this);
         http = new Http(httpClient);
 
         logIn();
         run();
+        joining.clear();
 
+        for(SERoom room : rooms){
+            System.out.println("In room " + room.getId());
+        }
     }
 
     public void logIn() throws IOException {
@@ -176,10 +179,7 @@ public class SEChat implements Chat {
 
         for(int i = joining.size() - 1; i >= 0; i--){
             try {
-                if (!addRoom(new SERoom(joining.get(i), this))) {
-                    //Some controlled event like the room is already joined
-                    System.out.println("Failed to join room " + joining.get(i));
-                }
+                addRoom(new SERoom(joining.get(i), this));
             }catch(RoomNotFoundException e){
                 //Uncontrolled event like room doesn't exist, can't write in the room, etc
                 System.out.println("Cannot join room");
@@ -219,7 +219,9 @@ public class SEChat implements Chat {
         public void run() {
             try {
                 while (!killed) {
-                    for (Message m : newMessages) {
+                    for (int x = newMessages.size() - 1; x >= 0; x--) {
+                        Message m = newMessages.get(x);
+
                         if(m.userid == site.getConfig().getUserID())
                             continue;
                         if (CommandCenter.isCommand(m.content)) {
@@ -383,15 +385,14 @@ public class SEChat implements Chat {
         NONE//To NPE's
     }
 
-    public boolean addRoom(SERoom room){
+    public void addRoom(SERoom room){
         for(SERoom s : rooms){
             if(s.getId() == room.getId()){
-                return false;
+                return;
             }
         }
 
         rooms.add(room);
-        return true;
     }
 
     public List<Long> getHardcodedAdmins(){
@@ -411,5 +412,15 @@ public class SEChat implements Chat {
                 System.out.println("Failed to leave room");
             }
         }
+    }
+
+    public void join(int i){
+        for(Integer x : joining){
+            if(x == i){
+                return;
+            }
+        }
+
+        joining.add(i);
     }
 }

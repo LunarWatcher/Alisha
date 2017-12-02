@@ -4,7 +4,8 @@ import io.github.lunarwatcher.chatbot.bot.chat.BMessage
 import io.github.lunarwatcher.chatbot.bot.sites.se.SEChat
 import io.github.lunarwatcher.chatbot.utils.Utils
 
-class Summon(val votes: Int, val chat: SEChat) : AbstractCommand("summon", arrayOf("join"), "Summon the bot to a room", "Joins a room after $votes votes"){
+class Summon(val votes: Int, val chat: SEChat) : AbstractCommand("summon", listOf("join"),
+        "Summon the bot to a room", "Joins a room after $votes votes"){
     var vts: MutableMap<Int, MutableList<Long>> = mutableMapOf();
 
     override fun handleCommand(input: String, user: User): BMessage? {
@@ -72,7 +73,8 @@ class Summon(val votes: Int, val chat: SEChat) : AbstractCommand("summon", array
     }
 }
 
-class UnSummon(val votes: Int, val chat: SEChat) : AbstractCommand("unsummon", arrayOf("leave"), "Makes the bot leave a specified room", "Leaves a room after $votes votes"){
+class UnSummon(val votes: Int, val chat: SEChat) : AbstractCommand("unsummon", listOf("leave"),
+        "Makes the bot leave a specified room", "Leaves a room after $votes votes"){
     var vts: MutableMap<Int, MutableList<Long>> = mutableMapOf();
 
     override fun handleCommand(input: String, user: User): BMessage? {

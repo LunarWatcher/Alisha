@@ -3,6 +3,7 @@ package io.github.lunarwatcher.chatbot.bot.command;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.lunarwatcher.chatbot.Database;
 import io.github.lunarwatcher.chatbot.bot.chat.BMessage;
 import io.github.lunarwatcher.chatbot.bot.chat.Message;
 import io.github.lunarwatcher.chatbot.bot.commands.*;
@@ -24,14 +25,22 @@ public class CommandCenter {
     public List<Command> commands;
     //List<Listener> listeners;
     public String site;
+    public static TaughtCommands tc;
+    public Database db;
 
-    public CommandCenter(Properties botProps, boolean shrugAlt, String site) {
+    public CommandCenter(Properties botProps, boolean shrugAlt, String site, Database db) {
+        if(tc == null){
+            tc = new TaughtCommands(db);
+        }
         this.site = site;
         TRIGGER = botProps.getProperty("bot.trigger");
         commands = new ArrayList<>();
         commands.add(new HelpCommand(this));
         commands.add(new ShrugCommand(shrugAlt ? "¯\\\\_(ツ)_/¯" : "¯\\_(ツ)_/¯"));
         commands.add(new AboutCommand());
+        commands.add(new Learn(tc, this));
+        commands.add(new UnLearn(tc, this));
+
         //listeners = new ArrayList<>();
     }
 
@@ -81,6 +90,12 @@ public class CommandCenter {
             }
         }
 
+        for(Command c : tc.getCommands()){
+            BMessage x = c.handleCommand(message, user);
+            if(x != null)
+                replies.add(x);
+        }
+
         if(replies.size() == 0)
             replies = null;
 
@@ -103,5 +118,20 @@ public class CommandCenter {
             return;
 
         commands.add(c);
+    }
+
+    public boolean isBuiltIn(String cmdName){
+        for(Command c : commands){
+            if(c.getName().equals(cmdName)){
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public static void save(){
+        if(tc != null)
+            tc.save();
     }
 }

@@ -8,20 +8,11 @@ import io.github.lunarwatcher.chatbot.bot.command.CommandCenter
 import io.github.lunarwatcher.chatbot.bot.command.CommandCenter.TRIGGER
 
 interface Command{
-    /**
-     * Get the name of the command
-     */
-    fun getName() : String;
+    val name: String;
+    val aliases: List<String>
+    val desc: String;
+    val help: String;
 
-    /**
-     * Get the commands aliases
-     */
-    fun getAliases(): Array<String>?;
-
-    /**
-     * Returns a description of the command
-     */
-    fun getDescription() : String;
     /**
      * Check if the input starts with the name or one of the command's aliases
      */
@@ -31,10 +22,6 @@ interface Command{
      */
     fun handleCommand(input: String, user: User) : BMessage?;
 
-    /**
-     * Get the help for a specific command.
-     */
-    fun getHelp() : String;
 }
 
 /**
@@ -42,8 +29,12 @@ interface Command{
  */
 class User(var userID: Long, var userName: String, var roomID: Int);
 
-//TODO warning: class doesn't work
-abstract class AbstractCommand(var name: String, var aliases: List<String>, var desc: String?, var help: String?) : Command{
+/**
+ * Utility implementation of [Command]
+ */
+abstract class AbstractCommand(override val name: String, override val aliases: List<String>,
+                               override val desc: String = Constants.NO_DESCRIPTION,
+                               override val help: String = Constants.NO_HELP) : Command{
 
     override fun matchesCommand(input: String): Boolean{
         val input = input.toLowerCase();
@@ -52,21 +43,41 @@ abstract class AbstractCommand(var name: String, var aliases: List<String>, var 
             return true;
         }
 
-        if (aliases?.size == 0) {
-            return false;
-        }else{
-            for(alias: String in aliases ?: return false){
-                if(split[0] == alias.toLowerCase()){
-                    return true;
+        return aliases.any{split[0] == it.toLowerCase()}
+    }
+
+    fun parseArguments(input: String) : List<String>?{
+        if(input.replace(name, "").isEmpty()){
+            //no arguments passed
+            return null;
+        }
+
+        val split = input.split(" ", limit = 2)[1]
+        //If a match isn't found, it ends up the exactly same as split
+        var multiArgs = split.split("&quot; &quot;")
+        val multiArgs2 = split.split("\" \"")
+        if(multiArgs != multiArgs2){
+            for(x in multiArgs){
+                if(x.contains("\"")){
+                    multiArgs = multiArgs2;
+                    break;
                 }
             }
         }
+        if(multiArgs.size == 1){
+            //Avoid IndexOutOfBounds by splitting the check in two
+            if(multiArgs[0] == split){
+                return listOf(split.replace("\"", "").replace("&quot;", ""));
+            }
+        }
+        val returnList: MutableList<String> = mutableListOf()
+        multiArgs.forEach{returnList.add(it.replace("\"", "").replace("&quot;", ""))}
 
-        return false;
+        return returnList;
     }
 }
 
-class HelpCommand(var center: CommandCenter) : AbstractCommand("help", null,
+class HelpCommand(var center: CommandCenter) : AbstractCommand("help", listOf(),
         "Lists all the commands the bot has",
         "Use `" + CommandCenter.TRIGGER + "help` to list all the commands and `" + CommandCenter.TRIGGER + "help [command name]` to get more info about a specifc command"){
 
@@ -81,22 +92,44 @@ class HelpCommand(var center: CommandCenter) : AbstractCommand("help", null,
         reply.fixedInput().append("###################### Help ######################")
                 .nl().fixedInput().nl();
         val commands: MutableMap<String, String> = mutableMapOf()
+        val learnedCommands: MutableMap<String, String> = mutableMapOf()
+
         val names: MutableList<String> = mutableListOf()
 
         if(!center.commands.isEmpty()) {
-            reply.fixedInput().append("==================== Commands").nl()
+
             for (command: Command in center.commands) {
-                commands.put(command.getName(), command.getDescription());
+                commands.put(command.name, command.desc);
+            }
+        }
+
+        if(!CommandCenter.tc.commands.isEmpty()){
+            for(cmd: LearnedCommand in CommandCenter.tc.commands){
+                learnedCommands.put(cmd.name, cmd.desc)
             }
         }
 
         names.addAll(commands.keys);
+        names.addAll(learnedCommands.keys)
+
         val maxLen = getMaxLen(names);
 
-        for(command in commands){
-            reply.fixedInput().append(TRIGGER + command.key);
-            reply.append(repeat(" ", maxLen - command.key.length + 2) + "| ")
-                    .append(command.value).nl();
+        if(!commands.isEmpty()) {
+            reply.fixedInput().append("==================== Commands").nl()
+            for (command in commands) {
+                reply.fixedInput().append(TRIGGER + command.key);
+                reply.append(repeat(" ", maxLen - command.key.length + 2) + "| ")
+                        .append(command.value).nl();
+            }
+        }
+
+        if(!learnedCommands.isEmpty()){
+            reply.fixedInput().append("==================== Learned Commands").nl()
+            for (command in learnedCommands) {
+                reply.fixedInput().append(TRIGGER + command.key);
+                reply.append(repeat(" ", maxLen - command.key.length + 2) + "| ")
+                        .append(command.value).nl();
+            }
         }
         return BMessage(reply.toString(), false);
 

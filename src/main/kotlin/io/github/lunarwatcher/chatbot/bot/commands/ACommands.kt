@@ -5,7 +5,8 @@ import io.github.lunarwatcher.chatbot.bot.chat.BMessage
 import io.github.lunarwatcher.chatbot.bot.sites.se.SEChat
 import io.github.lunarwatcher.chatbot.utils.Utils
 
-class AddHome(val site: SEChat) : AbstractCommand("home", null, "Adds a home room - Admins only", "Adds a home room for the bot on this site"){
+class AddHome(val site: SEChat) : AbstractCommand("home", listOf(),
+        "Adds a home room - Admins only", "Adds a home room for the bot on this site"){
     override fun handleCommand(input: String, user: User): BMessage? {
         if(!matchesCommand(input))
             return null;
@@ -31,7 +32,8 @@ class AddHome(val site: SEChat) : AbstractCommand("home", null, "Adds a home roo
     }
 }
 
-class RemoveHome(val site: SEChat) : AbstractCommand("remhome", null, "Remvoes a home room - Admins only", "Removes a home room for the bot on this site"){
+class RemoveHome(val site: SEChat) : AbstractCommand("remhome", listOf(),
+        "Removes a home room - Admins only", "Removes a home room for the bot on this site"){
     override fun handleCommand(input: String, user: User): BMessage? {
         if(!matchesCommand(input))
             return null;

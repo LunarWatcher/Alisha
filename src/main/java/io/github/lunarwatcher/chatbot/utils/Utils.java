@@ -207,4 +207,12 @@ public final class Utils {
     public static String createPing(String username){
         return "@" + (username.replace(" ", ""));
     }
+
+    public static String getRandomLearnedMessage(){
+        return Constants.learnedMessages[random.nextInt(Constants.learnedMessages.length)];
+    }
+
+    public static String getRandomForgottenMessage(){
+        return Constants.forgotMessage[random.nextInt(Constants.forgotMessage.length)];
+    }
 }

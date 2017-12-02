@@ -92,6 +92,8 @@ public class Database {
             return node.asInt();
         }else if(node.isLong()){
             return node.asLong();
+        }else if(node.isBoolean()) {
+            return node.asBoolean();
         }else if (node.isNull()) {
             return null;
         }
@@ -204,6 +206,10 @@ public class Database {
         }else if (value instanceof Long) {
             Long integer = (Long) value;
             generator.writeNumber(integer);
+            return;
+        }else if(value instanceof Boolean) {
+            Boolean bool = (Boolean) value;
+            generator.writeBoolean(bool);
             return;
         }else if (value == null) {
             generator.writeNull();

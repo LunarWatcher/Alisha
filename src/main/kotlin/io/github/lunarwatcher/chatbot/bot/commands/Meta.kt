@@ -1,5 +1,6 @@
 package io.github.lunarwatcher.chatbot.bot.commands
 
+//TODO make this better kotlin
 class BotConfig{
     val site: String;
     val admins: MutableList<Long>;

@@ -43,7 +43,7 @@ public class DiscordChat implements Chat{
         this.db = db;
         this.botProps = botProps;
         logIn();
-        commands = new CommandCenter(botProps, false, site.getName());
+        commands = new CommandCenter(botProps, false, site.getName(), db);
         commands.loadDiscord(this);
         commands.loadNSFW();
 
@@ -220,7 +220,7 @@ public class DiscordChat implements Chat{
 
     public static class Match extends AbstractCommand {
         public Match() {
-            super("stats", null, "Get the status for a user", TRIGGER + "stats <username>");
+            super("stats", new ArrayList<>(), "Get the status for a user", TRIGGER + "stats <username>");
         }
         @Override
         public BMessage handleCommand(@NotNull String input, @NotNull User user) {
