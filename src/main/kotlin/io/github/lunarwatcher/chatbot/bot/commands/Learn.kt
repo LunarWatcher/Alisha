@@ -40,7 +40,8 @@ class TaughtCommands(val db: Database){
             cmdMap.put("output", lc.output);
             cmdMap.put("creator", lc.creator);
             cmdMap.put("reply", lc.reply);
-
+            cmdMap.put("site", lc.site);
+            cmdMap.put("nsfw", lc.nsfw)
             map.add(cmdMap)
 
         }
@@ -62,6 +63,12 @@ class TaughtCommands(val db: Database){
             val name: String = map["name"] as String;
             val desc: String = map["desc"] as String;
             val output: String = map["output"] as String;
+            val site: String = map["site"] as String? ?: "Unknown";
+            val nsfw: Boolean = map["nsfw"] as Boolean? ?: true;
+
+            //Since at this time there are some commands that have been created before this system was added, allow for the site
+            //to be null and instead loaded to "unknown". This is not going to happen often so it isn't going to be a big problem
+            //when the bot is actively used
 
             //Keep these in case a user-implemented database doesn't work as it is supposed to.
             val creator: Long = try{
@@ -75,10 +82,7 @@ class TaughtCommands(val db: Database){
                 (map["reply"] as String).toBoolean();
             }
 
-            addCommand(LearnedCommand(name, desc, output, reply, creator))
-        }
-        for(item: Any in loaded){
-
+            addCommand(LearnedCommand(name, desc, output, reply, creator, nsfw, site))
         }
     }
 
@@ -96,12 +100,18 @@ class TaughtCommands(val db: Database){
     }
 }
 
-class LearnedCommand(cmdName: String, cmdDesc: String = "No description supplied", val output: String, val reply: Boolean, val creator: Long)
+class LearnedCommand(cmdName: String, cmdDesc: String = "No description supplied",
+                     val output: String, val reply: Boolean, val creator: Long, var nsfw: Boolean = false, val site: String)
     : AbstractCommand(cmdName, listOf(), cmdDesc, "This is a learned command and does not have help"){
 
     override fun handleCommand(input: String, user: User): BMessage? {
         if(!matchesCommand(input)){
             return null;
+        }
+        var output = this.output;
+
+        if(user.site == "discord"){
+            output = output.replace("\\\\", "\\")
         }
         return BMessage(output, reply);
     }
@@ -111,8 +121,20 @@ class LearnedCommand(cmdName: String, cmdDesc: String = "No description supplied
 class Learn(val commands: TaughtCommands, val center: CommandCenter) : AbstractCommand("learn", listOf(), "Teaches the bot a new command"){
 
     override fun handleCommand(input: String, user: User): BMessage? {
+        var input = input;
+
         if(!matchesCommand(input)) return null;
 
+        var nsfw: Boolean = false;
+
+        //on Discord there may appear commands that one would consider unwanted on sites like the Stack Exchange network.
+        //These are just called NSFW because I have nothing better to call them.
+        //If they are manually added as SFW they will appear everywhere. Otherwise, only some sites will have access
+        if(center.site.name == "discord") {
+            nsfw = !input.contains("-s");
+            if (input.contains("-s"))
+                input = input.replaceFirst("-s ", "")
+        }
         val args: List<String> = parseArguments(input) ?: return BMessage("You have to pass at least the command name", true);
 
         println(args)
@@ -124,7 +146,6 @@ class Learn(val commands: TaughtCommands, val center: CommandCenter) : AbstractC
         var creator = user.userID;
         var output = "undefined";
         var reply = false;
-
 
         for(i in 0 until args.size){
             if(i == 0){
@@ -149,7 +170,7 @@ class Learn(val commands: TaughtCommands, val center: CommandCenter) : AbstractC
             return BMessage("That command already exists", true);
         }
 
-        commands.addCommand(LearnedCommand(name, desc, output, reply, creator))
+        commands.addCommand(LearnedCommand(name, desc, output, reply, creator, nsfw, center.site.name))
 
         return BMessage(Utils.getRandomLearnedMessage(), true);
     }

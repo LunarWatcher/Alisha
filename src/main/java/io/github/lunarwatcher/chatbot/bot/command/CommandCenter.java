@@ -7,6 +7,7 @@ import io.github.lunarwatcher.chatbot.Database;
 import io.github.lunarwatcher.chatbot.bot.chat.BMessage;
 import io.github.lunarwatcher.chatbot.bot.chat.Message;
 import io.github.lunarwatcher.chatbot.bot.commands.*;
+import io.github.lunarwatcher.chatbot.bot.sites.Chat;
 import io.github.lunarwatcher.chatbot.bot.sites.discord.DiscordChat;
 import io.github.lunarwatcher.chatbot.bot.sites.se.SEChat;
 import lombok.Getter;
@@ -24,11 +25,12 @@ public class CommandCenter {
     @Getter
     public List<Command> commands;
     //List<Listener> listeners;
-    public String site;
+    public Chat site;
     public static TaughtCommands tc;
     public Database db;
 
-    public CommandCenter(Properties botProps, boolean shrugAlt, String site, Database db) {
+    public CommandCenter(Properties botProps, boolean shrugAlt, Chat site) {
+        this.db = site.getDatabase();
         if(tc == null){
             tc = new TaughtCommands(db);
         }
@@ -40,7 +42,15 @@ public class CommandCenter {
         commands.add(new AboutCommand());
         commands.add(new Learn(tc, this));
         commands.add(new UnLearn(tc, this));
-
+        commands.add(new AddAdmin(site));
+        commands.add(new RemoveAdmin(site));
+        commands.add(new CheckCommand(site));
+        commands.add(new BanUser(site));
+        commands.add(new Unban(site));
+        commands.add(new SaveCommand(site));
+        commands.add(new Alive());
+        commands.add(new WhoMade(this));
+        commands.add(new ChangeCommandStatus(this));
         //listeners = new ArrayList<>();
     }
 
@@ -53,7 +63,10 @@ public class CommandCenter {
 
     public void loadDiscord(DiscordChat chat){
         commands.add(new DiscordChat.Match());
+        commands.add(new NSFWState(chat));
+
     }
+
     /**
      * method used to load commands/listeners that are considered NSFW on some sites. This doesn't necessarily mean actually
      * NSFW, it basically means the commands that aren't wanted on sites like StackExchange. On most Discord servers
@@ -66,12 +79,14 @@ public class CommandCenter {
      * Whether or not this needs to be used separately depends on whether or not what the bot says being NSFW
      * doesn't matter. If it can say anything on a given site without problems this method can be removed in general.
      * But since this also is meant to be used with the SE network, it isn't going to work
+     *
+     * These are the hard-coded ones that are unwanted in the SE network and similar sites
      */
     public void loadNSFW(){
 
     }
 
-    public List<BMessage> parseMessage(String message, User user) throws IOException{
+    public List<BMessage> parseMessage(String message, User user, boolean nsfw) throws IOException{
         if(message == null)
             return null;
 
@@ -79,7 +94,7 @@ public class CommandCenter {
             return null;
 
 
-        message = message.replaceFirst(TRIGGER, "");
+        message = message.substring(TRIGGER.length());
 
         List<BMessage> replies = new ArrayList<>();
 
@@ -90,7 +105,11 @@ public class CommandCenter {
             }
         }
 
-        for(Command c : tc.getCommands()){
+        for(LearnedCommand c : tc.getCommands()){
+            //If the command is NSFW but the site doesn't allow it, don't handle the command
+            if(c.getNsfw() && !nsfw)
+                continue;
+
             BMessage x = c.handleCommand(message, user);
             if(x != null)
                 replies.add(x);

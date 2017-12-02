@@ -27,7 +27,7 @@ interface Command{
 /**
  * Info about a user.
  */
-class User(var userID: Long, var userName: String, var roomID: Int);
+class User(var site: String, var userID: Long, var userName: String, var roomID: Int, var nsfwSite: Boolean = false);
 
 /**
  * Utility implementation of [Command]
@@ -88,7 +88,7 @@ class HelpCommand(var center: CommandCenter) : AbstractCommand("help", listOf(),
 
 
         //No arguments supplied
-        val reply = ReplyBuilder();
+        val reply = ReplyBuilder(center.site.name == "discord");
         reply.fixedInput().append("###################### Help ######################")
                 .nl().fixedInput().nl();
         val commands: MutableMap<String, String> = mutableMapOf()
@@ -125,10 +125,17 @@ class HelpCommand(var center: CommandCenter) : AbstractCommand("help", listOf(),
 
         if(!learnedCommands.isEmpty()){
             reply.fixedInput().append("==================== Learned Commands").nl()
-            for (command in learnedCommands) {
-                reply.fixedInput().append(TRIGGER + command.key);
-                reply.append(repeat(" ", maxLen - command.key.length + 2) + "| ")
-                        .append(command.value).nl();
+            for (command in CommandCenter.tc.commands) {
+                if(command.nsfw && !user.nsfwSite){
+                    continue;
+                }
+
+                reply.fixedInput().append(TRIGGER + command.name);
+                reply.append(repeat(" ", maxLen - command.name.length + 2) + "| ")
+                        .append(command.desc);
+                if(command.nsfw)
+                    reply.append(" - NSFW");
+                reply.nl();
             }
         }
         return BMessage(reply.toString(), false);
@@ -170,5 +177,14 @@ class AboutCommand() : AbstractCommand("about", listOf("whoareyou"), "Info about
                 .append("I'm open-source and the code is available on [Github](https://github.com/LunarWatcher/Alisha)")
 
         return BMessage(reply.toString(), true)
+    }
+}
+
+class Alive : AbstractCommand("alive", listOf(), "Used to check if the bot is working"){
+    override fun handleCommand(input: String, user: User): BMessage? {
+        if(!matchesCommand(input))
+            return null;
+
+        return BMessage("I'm alive. Are you?", true);
     }
 }

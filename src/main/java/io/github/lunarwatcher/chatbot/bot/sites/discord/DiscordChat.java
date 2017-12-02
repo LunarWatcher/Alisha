@@ -22,6 +22,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static io.github.lunarwatcher.chatbot.Constants.DEFAULT_NSFW;
 import static io.github.lunarwatcher.chatbot.bot.command.CommandCenter.TRIGGER;
 
 public class DiscordChat implements Chat{
@@ -36,21 +37,22 @@ public class DiscordChat implements Chat{
     private List<IChannel> channels;
     private BotConfig config;
     public List<Long> hardcodedAdmins = new ArrayList<>();
-
+    List<Long> notifiedBanned = new ArrayList<>();
+    Map<Long, Boolean> nsfw = new HashMap<>();
 
     public DiscordChat(Site site, Properties botProps, Database db) throws IOException {
         this.site = site;
         this.db = db;
         this.botProps = botProps;
         logIn();
-        commands = new CommandCenter(botProps, false, site.getName(), db);
+        commands = new CommandCenter(botProps, false, this);
         commands.loadDiscord(this);
         commands.loadNSFW();
 
         channels = new ArrayList<>();
 
         regex = new ArrayList<>();
-        config = new BotConfig(site.getName());
+        config = new BotConfig(this);
 
         load();
 
@@ -61,10 +63,33 @@ public class DiscordChat implements Chat{
 
     public void load(){
         Utils.loadConfig(config, db);
+
+        List<Object> sfw = db.getList("sfw");
+        if(sfw != null) {
+            for (Object o : sfw) {
+                Map<String, Boolean> entry = (Map<String, Boolean>) o;
+                for (Map.Entry<String, Boolean> e : entry.entrySet()) {
+                    long guildID = Long.parseLong(e.getKey());
+                    boolean allowsNSFW = e.getValue();
+                    this.nsfw.put(guildID, allowsNSFW);
+                }
+            }
+        }
+
     }
 
     public void save(){
         Utils.saveConfig(config, db);
+
+        List<Map<String, Boolean>> sites = new ArrayList<>();
+
+        for(Map.Entry<Long, Boolean> entry : nsfw.entrySet()){
+            Map<String, Boolean> data = new HashMap<>();
+            data.put(entry.getKey().toString(), entry.getValue());
+            sites.add(data);
+        }
+
+        db.put("sfw", sites);
     }
 
     @Override
@@ -81,8 +106,24 @@ public class DiscordChat implements Chat{
     @EventSubscriber
     public void onMessageReceived(MessageReceivedEvent event){
         String msg = event.getMessage().getContent();
-
         if(CommandCenter.isCommand(msg)){
+
+
+            if(Utils.isBanned(event.getAuthor().getLongID(), config)){
+                boolean mf = false;
+
+                for(Long u : notifiedBanned){
+                    if(u == event.getAuthor().getLongID()){
+                        mf = true;
+                        break;
+                    }
+                }
+
+                if(!mf){
+                    notifiedBanned.add(event.getAuthor().getLongID());
+                    event.getChannel().sendMessage("You're banned from interacting with me <@" + event.getAuthor().getLongID() + ">");
+                }
+            }
             if(msg.startsWith(TRIGGER + "stats")){
                 String cmd = msg.replace(TRIGGER + "stats ", "");
                 RMatch match = null;
@@ -122,8 +163,8 @@ public class DiscordChat implements Chat{
                         }
                     }
 
-                    User user = new User(event.getAuthor().getLongID(), event.getAuthor().getName(), index);
-                    List<BMessage> replies = commands.parseMessage(msg, user);
+                    User user = new User(site.getName(), event.getAuthor().getLongID(), event.getAuthor().getName(), index, getNsfw(event.getGuild().getLongID()));
+                    List<BMessage> replies = commands.parseMessage(msg, user, getNsfw(event.getGuild().getLongID()));
                     if(replies == null){
                         event.getChannel().sendMessage("Look up the manual maybe?");
                     }else {
@@ -241,5 +282,46 @@ public class DiscordChat implements Chat{
     }
     public Site getSite(){
         return site;
+    }
+
+    public Database getDatabase(){
+        return db;
+    }
+
+    public boolean getNsfw(long server){
+        for(Map.Entry<Long, Boolean> entry : nsfw.entrySet()){
+            if(entry.getKey() == server){
+                return entry.getValue();
+            }
+        }
+
+        nsfw.put(server, DEFAULT_NSFW);
+
+        return DEFAULT_NSFW;
+    }
+
+    public void setNsfw(long server, boolean newState){
+
+    }
+
+    /**
+     * Since the {@link User} class takes the room (here: channel) as an integer, the discord handler puts all the channels
+     * into an ArrayList and then passes the index of a channel as the argument. This is then converted back into this method
+     * where it gets the assosiated channel and returns the guild ID
+     * @param channelIndex The channel index to get
+     * @return The guild ID or -1 if not found
+     */
+    public long getAssosiatedGuild(int channelIndex){
+        IChannel x;
+        try {
+            x = channels.get(channelIndex);
+            if (x == null) {
+                return -1;
+            }
+        }catch(IndexOutOfBoundsException e){
+            return -1;
+        }
+
+        return x.getGuild().getLongID();
     }
 }

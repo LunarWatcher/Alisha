@@ -1,5 +1,6 @@
 package io.github.lunarwatcher.chatbot.bot.sites;
 
+import io.github.lunarwatcher.chatbot.Database;
 import io.github.lunarwatcher.chatbot.Site;
 import io.github.lunarwatcher.chatbot.bot.chat.Message;
 import io.github.lunarwatcher.chatbot.bot.commands.BotConfig;
@@ -18,4 +19,6 @@ public interface Chat {
     List<Long> getHardcodedAdmins();
     Site getSite();
     Properties getBotProps();
+    Database getDatabase();
+
 }

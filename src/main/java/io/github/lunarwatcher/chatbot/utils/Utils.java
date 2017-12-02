@@ -95,7 +95,7 @@ public final class Utils {
         List<Long> priv = cf.getPrivelege();
         List<Integer> homes = cf.getHomes();
 
-        String site = cf.getSite();
+        String site = cf.getSite().getName();
 
         db.put(Constants.HOME_ROOMS(site), homes);
         db.put(Constants.ADMIN_USERS(site), admin);
@@ -106,7 +106,7 @@ public final class Utils {
     }
 
     public static void loadConfig(BotConfig cf, Database db){
-        String site = cf.getSite();
+        String site = cf.getSite().getName();
         //Possible ClassCastException can occur from this
         try {
             List<Integer> homes = (List<Integer>) db.get(Constants.HOME_ROOMS(site));

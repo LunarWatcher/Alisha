@@ -36,6 +36,7 @@ import java.util.regex.Pattern;
  * for a specific site.
  */
 public class SEChat implements Chat {
+    public static boolean NSFW = false;
     @Getter
     Site site;
     @Getter
@@ -51,6 +52,7 @@ public class SEChat implements Chat {
     public List<SERoom.StarMessage> starredMessages = new ArrayList<>();
     public List<SERoom.UserAction> actions = new ArrayList<>();
     public List<Message> pingMessages = new ArrayList<>();
+    List<Integer> notifiedBanned = new ArrayList<>();
 
     private List<Integer> roomsToleave = new ArrayList<>();
     private List<SERoom> rooms = new ArrayList<>();
@@ -75,7 +77,7 @@ public class SEChat implements Chat {
         this.webSocket = webSocket;
         this.botProps = botProps;
 
-        config = new BotConfig(site.getName());
+        config = new BotConfig(this);
         load();
 
         for(Map.Entry<Object, Object> s : botProps.entrySet()){
@@ -126,7 +128,7 @@ public class SEChat implements Chat {
 
 
 
-        commands = new CommandCenter(botProps, true, site.getName(), db);
+        commands = new CommandCenter(botProps, true, this);
         commands.loadSE(this);
         http = new Http(httpClient);
 
@@ -224,9 +226,27 @@ public class SEChat implements Chat {
 
                         if(m.userid == site.getConfig().getUserID())
                             continue;
+                        if(Utils.isBanned(m.userid, config)){
+                            boolean mf = false;
+
+                            for(Integer u : notifiedBanned){
+                                if(u == m.userid){
+                                    mf = true;
+                                    break;
+                                }
+                            }
+
+                            if(!mf){
+                                notifiedBanned.add(m.userid);
+                                SERoom s = getRoom(m.roomID);
+                                if(s != null){
+                                    s.reply("You're banned from interracting with me", m.messageID);
+                                }
+                            }
+                        }
                         if (CommandCenter.isCommand(m.content)) {
-                            User user = new User(m.userid, m.username, m.roomID);
-                            List<BMessage> replies = commands.parseMessage(m.content, user);
+                            User user = new User(getName(), m.userid, m.username, m.roomID, false);
+                            List<BMessage> replies = commands.parseMessage(m.content, user, false);
                             if(replies != null && getRoom(m.roomID) != null){
                                 for(BMessage bm : replies){
                                     if(bm.replyIfPossible){
@@ -245,8 +265,6 @@ public class SEChat implements Chat {
                             }
                         }
                     }
-
-
 
                     newMessages.clear();
                     starredMessages.clear();
@@ -422,5 +440,9 @@ public class SEChat implements Chat {
         }
 
         joining.add(i);
+    }
+
+    public Database getDatabase(){
+        return db;
     }
 }

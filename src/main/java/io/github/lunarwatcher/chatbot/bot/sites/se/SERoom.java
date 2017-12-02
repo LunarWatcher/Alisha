@@ -91,6 +91,8 @@ public class SERoom implements Closeable {
 
         return url + "?l=" + System.currentTimeMillis();
     }
+
+    //TODO add external handlers
     public void receiveMessage(String input){
         try {
             ObjectMapper mapper = new ObjectMapper();
@@ -105,7 +107,6 @@ public class SERoom implements Closeable {
 
             boolean eight = false;
             for(JsonNode event : actualObj){
-                System.out.println(event.toString());
                 JsonNode et = event.get("event_type");
                 if(et == null)
                     continue;
@@ -116,6 +117,7 @@ public class SERoom implements Closeable {
                 if(eventCode == 1 || eventCode == 2){
                     String content = event.get("content").toString();
                     content = removeQuotation(content);
+                    content = correctBackslash(content);
                     if(eight){
                         if(isPinged(content, parent.site.getConfig().getUsername())){
                             //The bot has already been pinged (flagged by event ID 8)
@@ -158,7 +160,7 @@ public class SERoom implements Closeable {
 
                     String content = event.get("content").toString();
                     content = removeQuotation(content);
-
+                    content = correctBackslash(content);
                     long messageID = event.get("message_id").asLong();
                     int userid = event.get("user_id").asInt();
                     String username = event.get("user_name").toString();
@@ -174,6 +176,11 @@ public class SERoom implements Closeable {
                 }else if(eventCode == 15){
                     close();
                     parent.getRooms().remove(this);
+                }else{
+                    //These are printed using the error stream to make sure they are easy to spot. These are critical
+                    //to find more events in the SE network
+                    System.err.println("Unknown event:");
+                    System.err.println(event.toString());
                 }
                 // Event reference sheet:,
 
@@ -262,4 +269,9 @@ public class SERoom implements Closeable {
     public int getId(){
         return id;
     }
+
+    public String correctBackslash(String input){
+        return input.replace("\\\\", "\\");
+    }
+
 }

@@ -1,14 +1,21 @@
 package io.github.lunarwatcher.chatbot.bot.commands
 
+import io.github.lunarwatcher.chatbot.bot.chat.BMessage
+import io.github.lunarwatcher.chatbot.bot.command.CommandCenter
+import io.github.lunarwatcher.chatbot.bot.sites.Chat
+import io.github.lunarwatcher.chatbot.bot.sites.se.SEChat
+import io.github.lunarwatcher.chatbot.utils.Utils
+import sun.java2d.pipe.AAShapePipe
+
 //TODO make this better kotlin
 class BotConfig{
-    val site: String;
+    val site: Chat;
     val admins: MutableList<Long>;
     val privelege: MutableList<Long>;
     val banned: MutableList<Long>;
     val homes: MutableList<Int>;
 
-    constructor(site: String){
+    constructor(site: Chat){
         this.site = site;
 
         admins = mutableListOf()
@@ -38,22 +45,35 @@ class BotConfig{
         return false;
     }
 
-    fun addAdmin(newUser: Long){
-        admins.filter { it == newUser }
-                .forEach { return }
+    fun addAdmin(newUser: Long) : ARRequests{
+        if(Utils.isBanned(newUser, this)){
+            return ARRequests(BANNED)
+        }
+        if(Utils.isAdmin(newUser, this)){
+            return ARRequests(EXISTED);
+        }
 
         admins.add(newUser)
+        return ARRequests(ADDED);
     }
 
-    fun removeAdmin(rr: Long){
+    fun removeAdmin(rr: Long) : ARRequests{
+        if(Utils.isHardcodedAdmin(rr, site))
+            return ARRequests(HARDCODED);
+
         for(i in (admins.size - 1) downTo 0){
             if(admins[i] == rr){
                 admins.removeAt(i)
+                return ARRequests(ADDED);
             }
         }
+        return ARRequests(EXISTED);
     }
 
     fun addPriv(newUser: Long){
+        if(Utils.isBanned(newUser, this)){
+            return
+        }
         privelege.filter { it == newUser }
                 .forEach { return }
 
@@ -68,25 +88,27 @@ class BotConfig{
         }
     }
 
-    fun ban(newUser: Long){
-        banned.filter { it == newUser }
-                .forEach { return }
+    fun ban(newUser: Long) : ARRequests{
+        if(Utils.isHardcodedAdmin(newUser, site)){
+            return ARRequests(HARDCODED)
+        }
+        if(Utils.isBanned(newUser, this)){
+            return ARRequests(EXISTED);
+        }
 
         banned.add(newUser)
+        return ARRequests(ADDED);
     }
 
-    fun unban(rr: Long){
-        for(i in (banned.size - 1) downTo 0){
-            if(banned[i] == rr){
-                banned.removeAt(i)
-            }
+    fun unban(rr: Long)  : ARRequests{
+        if(Utils.isBanned(rr, this)){
+            banned.remove(rr);
+            return ARRequests(ADDED);
         }
+
+        return ARRequests(EXISTED);
     }
 
-    /**
-     * Since the database can return null for objects, allow support for nullable variables. These are simply ignored
-     * in the function
-     */
     fun set(homes: List<Int>?, admins: List<Long>?, prived: List<Long>?, banned: List<Long>?){
         if(homes != null) {
             this.homes.addAll(homes)
@@ -108,4 +130,62 @@ class BotConfig{
         }
     }
 
+}
+
+val EXISTED: Int = 0;
+val ADDED: Int = 1;
+val HARDCODED = 2;
+val BANNED = 3;
+
+data class ARRequests(val code: Int);
+
+//Committing and pushing...
+
+class ChangeCommandStatus(val center: CommandCenter) : AbstractCommand("declare", listOf(), "Changes a commands status. Only commands available on the site can be edited"){
+    override fun handleCommand(input: String, user: User): BMessage? {
+        if(!matchesCommand(input)){
+            return null;
+        }
+
+        if(!Utils.isAdmin(user.userID, center.site.config) && !Utils.isPriv(user.userID, center.site.config)){
+            return BMessage("I'm afraid I can't let you do that, User", true);
+        }
+        try {
+            val args = input.split(" ");
+            val command = args[1];
+
+            var newState: String = args[2];
+            val actual: Boolean
+            if(newState == "sfw"){
+                actual = false;
+            }else if(newState == "nsfw"){
+                actual = true;
+            }else
+                actual = newState.toBoolean();
+
+            if (center.isBuiltIn(command)) {
+                System.out.println(command);
+                return BMessage("You can't change the status of included commands.", true);
+            }
+            if (CommandCenter.tc.doesCommandExist(command)) {
+                CommandCenter.tc.commands.forEach{
+                    if(it.name == command) {
+                        if(it.nsfw == actual){
+                            return BMessage("The status was already set to " + (if (actual) "NSFW" else "SFW"), true);
+                        }
+                        it.nsfw = actual;
+
+                        return BMessage("Command status changed to " + (if (actual) "NSFW" else "SFW"), true);
+                    }
+                }
+            } else {
+                return BMessage("The command doesn't exist.", true);
+            }
+        }catch(e:ClassCastException){
+            return BMessage("Something just went terribly wrong. Sorry 'bout that", true);
+        }catch(e: IndexOutOfBoundsException){
+            return BMessage("Not enough arguments. I need the command name and new state", true);
+        }
+        return BMessage("This is in theory unreachable code. If you read this message something bad happened", true);
+    }
 }

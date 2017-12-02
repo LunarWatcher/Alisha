@@ -14,6 +14,7 @@ public final class Constants {
     public static final long SAVE_INTERVAL = 30000;
     public static final int RELOCATION_VOTES = 3;
     public static final String LEARNED_COMMANDS = "learned";
+    public static final boolean DEFAULT_NSFW = true;
 
     public static final String[] joinMessages = {
             "As you command, I'll leave for that room as soon as possible",
