@@ -5,6 +5,7 @@ import io.github.lunarwatcher.chatbot.Database;
 import io.github.lunarwatcher.chatbot.bot.commands.BotConfig;
 import io.github.lunarwatcher.chatbot.bot.sites.Chat;
 import io.github.lunarwatcher.chatbot.bot.sites.se.SEChat;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.util.DiscordException;
@@ -200,5 +201,10 @@ public final class Utils {
         for(Long i : c.getHardcodedAdmins()){
             c.getConfig().addAdmin(i);
         }
+    }
+
+    @NotNull
+    public static String createPing(String username){
+        return "@" + (username.replace(" ", ""));
     }
 }

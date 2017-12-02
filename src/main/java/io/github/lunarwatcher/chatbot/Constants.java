@@ -11,8 +11,9 @@ public final class Constants {
     public static final String DEFAULT_DATABASE = "memory.json";
     public static final String NO_HELP = "No help was supplied for this command";
     public static final String NO_DESCRIPTION = "No description was supplied for this command";
-
+    public static final long SAVE_INTERVAL = 30000;
     public static final int RELOCATION_VOTES = 3;
+    public static final String LEARNED_COMMANDS = "learned";
 
     public static final String[] joinMessages = {
             "As you command, I'll leave for that room as soon as possible",

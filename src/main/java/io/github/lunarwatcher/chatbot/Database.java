@@ -24,6 +24,7 @@ import java.util.*;
  * This class is the memory core of the bot, it saves all the data it gets into a .json database.
  * .json is used because implementing SQL is overkill and using regular .txt files is a mess.
  */
+@SuppressWarnings("unchecked")
 public class Database {
     public Path file;
     private Map<String, Object> cache = new HashMap<>();
@@ -36,7 +37,12 @@ public class Database {
         this.file = file;
         
         if (Files.exists(file)) {
-            load();
+            try {
+                load();
+            }catch(Exception e){
+                e.printStackTrace();
+                System.out.println("Ignored load failing.");
+            }
         }else{
             Files.createFile(file);
         }
@@ -90,15 +96,13 @@ public class Database {
             return null;
         }
 
-
-
         String text = node.asText();
 
         try {
             return LocalDateTime.parse(text, formatter);
-        } catch (DateTimeParseException e) {}//Not a date, ignore
-
-        return text;
+        } catch (DateTimeParseException e) {
+            return text;
+        }
     }
 
     /**
@@ -209,4 +213,14 @@ public class Database {
         String string = value.toString();
         generator.writeString(string);
     }
+
+    public Map<String, Object> getMap(String key){
+        return (Map<String, Object>) get(key);
+    }
+
+    public List<Object> getList(String key){
+        return (List<Object>) get(key);
+    }
+
+
 }

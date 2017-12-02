@@ -13,6 +13,7 @@ import io.github.lunarwatcher.chatbot.bot.commands.User;
 import io.github.lunarwatcher.chatbot.bot.exceptions.RoomNotFoundException;
 import io.github.lunarwatcher.chatbot.bot.sites.Chat;
 import io.github.lunarwatcher.chatbot.utils.Http;
+import io.github.lunarwatcher.chatbot.utils.Response;
 import io.github.lunarwatcher.chatbot.utils.Utils;
 import lombok.Getter;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -67,20 +68,6 @@ public class SEChat implements Chat {
 
     public Properties botProps;
 
-    /*
-    # Deprecated
-bot.homes.stackoverflow=1
-bot.homes.metastackexchange=721
-bot.homes.stackexchange=1
-
-bot.home.leave=false
-
-# While the admins are stored in the database, these are the hard-coded ones that can't be removed
-bot.stackexchange.admin=165415
-bot.stackoverflow.admin=6296561
-bot.metastackexchange.admin=332043
-bot.discord.admin=363018555081359360
-     */
     public SEChat(Site site, CloseableHttpClient httpClient, WebSocketContainer webSocket, Properties botProps, Database database) throws IOException {
         this.site = site;
         this.db = database;
@@ -90,8 +77,6 @@ bot.discord.admin=363018555081359360
 
         config = new BotConfig(site.getName());
         load();
-
-
 
         for(Map.Entry<Object, Object> s : botProps.entrySet()){
             String key = (String) s.getKey();
@@ -127,10 +112,22 @@ bot.discord.admin=363018555081359360
         List<Integer> data = (List<Integer>) database.get(getName() + "-rooms");
         if(data != null){
             joining.addAll(data);
+        }else{
+            //No current rooms
+            if(config.getHomes().size() == 0) {
+                //No manually added home rooms
+                if (hardcodedRooms.size() == 0) {
+                    //No hard-coded rooms
+                    hardcodedRooms.add((site.getName().equals("metastackexchange") ? 721 : 1));
+
+                }
+            }
         }
         data = null;
 
-        commands = new CommandCenter(botProps, true);
+
+
+        commands = new CommandCenter(botProps, true, site.getName());
         commands.loadSE(this);
         http = new Http(httpClient);
 
@@ -145,13 +142,13 @@ bot.discord.admin=363018555081359360
         String targetUrl = (site.getName().equals("stackexchange") ? SEEvents.getSELogin(site.getUrl()) : SEEvents.getLogin(site.getUrl()));
 
         if (site.getName().equals("stackexchange")) {
-            Http.Response se = http.post(targetUrl, "from", "https://stackexchange.com/users/login#log-in");
+            Response se = http.post(targetUrl, "from", "https://stackexchange.com/users/login#log-in");
             targetUrl = se.getBody();
         }
 
         String fKey = Utils.parseHtml(http.get(targetUrl).getBody());
 
-        Http.Response response = null;
+        Response response = null;
 
         if(fKey == null){
             System.out.println("No fKey found!");
@@ -172,19 +169,27 @@ bot.discord.admin=363018555081359360
 
         int statusCode = response.getStatusCode();
 
+        //SE doesn't redirect automatically, but the page does exist. Allow both 200 and 302 status codes.
         if(statusCode != 200 && statusCode != 302){
             throw new IllegalAccessError();
         }
 
-        try {
-            for(int i = joining.size() - 1; i >= 0; i--){
-                addRoom(new SERoom(joining.get(i), this));
+        for(int i = joining.size() - 1; i >= 0; i--){
+            try {
+                if (!addRoom(new SERoom(joining.get(i), this))) {
+                    //Some controlled event like the room is already joined
+                    System.out.println("Failed to join room " + joining.get(i));
+                }
+            }catch(RoomNotFoundException e){
+                //Uncontrolled event like room doesn't exist, can't write in the room, etc
+                System.out.println("Cannot join room");
+            }catch(IllegalArgumentException e){
+                System.out.println("Room not available!");
+            }catch(Exception ex){
+                ex.printStackTrace();
             }
-        }catch(IllegalArgumentException e){
-            System.out.println("Room not available!");
-        }catch(Exception ex){
-            ex.printStackTrace();
         }
+
     }
 
     public void run(){
@@ -240,9 +245,6 @@ bot.discord.admin=363018555081359360
                     }
 
 
-                    for(SERoom.StarMessage sm : starredMessages){
-
-                    }
 
                     newMessages.clear();
                     starredMessages.clear();
@@ -329,6 +331,7 @@ bot.discord.admin=363018555081359360
             for(int i = rooms.size() - 1; i >= 0; i--){
                 if(rooms.get(i).getId() == rid){
                     roomsToleave.add(rooms.get(i).getId());
+                    save();
                     return true;
                 }
             }
@@ -347,7 +350,10 @@ bot.discord.admin=363018555081359360
 
             db.put(getName() + "-rooms", rooms);
         }
+
         Utils.saveConfig(config, db);
+
+        db.commit();
     }
 
     public void load(){
@@ -380,12 +386,6 @@ bot.discord.admin=363018555081359360
     public boolean addRoom(SERoom room){
         for(SERoom s : rooms){
             if(s.getId() == room.getId()){
-                try {
-                    room.close();
-                }catch(IOException e){
-                    e.printStackTrace();
-                }
-
                 return false;
             }
         }
@@ -402,4 +402,14 @@ bot.discord.admin=363018555081359360
         return botProps;
     }
 
+
+    public void leaveAll(){
+        for(SERoom s : rooms){
+            try {
+                s.close();
+            }catch(IOException e){
+                System.out.println("Failed to leave room");
+            }
+        }
+    }
 }

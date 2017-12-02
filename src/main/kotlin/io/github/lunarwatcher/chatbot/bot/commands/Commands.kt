@@ -42,29 +42,26 @@ interface Command{
  */
 class User(var userID: Long, var userName: String, var roomID: Int);
 
-abstract class AbstractCommand(var nm: String, var als: Array<String>?, var desc: String?, var hlp: String?) : Command{
+//TODO warning: class doesn't work
+abstract class AbstractCommand(var name: String, var aliases: List<String>, var desc: String?, var help: String?) : Command{
 
-    override fun getHelp() : String = hlp ?: Constants.NO_HELP;
-    override fun getDescription(): String = desc ?: Constants.NO_DESCRIPTION;
-    override fun getName(): String = nm;
-    override fun getAliases(): Array<String>? = als;
     override fun matchesCommand(input: String): Boolean{
         val input = input.toLowerCase();
         val split = input.split(" ");
-        if(split[0] == nm.toLowerCase()){
+        if(split[0] == name.toLowerCase()){
             return true;
         }
-        if(als != null) {
-            if (als?.size == 0) {
-                return false;
-            }else{
-                for(alias: String in als ?: return false){
-                    if(split[0] == alias.toLowerCase()){
-                        return true;
-                    }
+
+        if (aliases?.size == 0) {
+            return false;
+        }else{
+            for(alias: String in aliases ?: return false){
+                if(split[0] == alias.toLowerCase()){
+                    return true;
                 }
             }
         }
+
         return false;
     }
 }
@@ -118,7 +115,7 @@ fun getMaxLen(list: MutableList<String>) : Int{
     return longest;
 }
 
-class ShrugCommand(val shrug: String): AbstractCommand("shrug", arrayOf("dunno", "what"), "Shrugs", "Use `" + TRIGGER + "shrug` to use the command"){
+class ShrugCommand(val shrug: String): AbstractCommand("shrug", listOf("dunno", "what"), "Shrugs", "Use `" + TRIGGER + "shrug` to use the command"){
     override fun handleCommand(input: String, user: User): BMessage? {
         if(!matchesCommand(input)){
             return null;
@@ -127,3 +124,18 @@ class ShrugCommand(val shrug: String): AbstractCommand("shrug", arrayOf("dunno",
     }
 }
 
+class AboutCommand() : AbstractCommand("about", listOf("whoareyou"), "Info about me", "Use `" + TRIGGER + "about` to show the info"){
+
+    override fun handleCommand(input: String, user: User): BMessage? {
+        if(!matchesCommand(input)){
+            return null;
+        }
+
+        val reply: ReplyBuilder = ReplyBuilder();
+
+        reply.append("Hello! I'm Alisha, a chatbot designed by [Zoe](https://stackoverflow.com/users/6296561/zoe).")
+                .append("I'm open-source and the code is available on [Github](https://github.com/LunarWatcher/Alisha)")
+
+        return BMessage(reply.toString(), true)
+    }
+}

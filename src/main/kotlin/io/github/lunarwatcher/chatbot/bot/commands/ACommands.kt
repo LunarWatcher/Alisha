@@ -53,6 +53,7 @@ class RemoveHome(val site: SEChat) : AbstractCommand("remhome", null, "Remvoes a
                     "They are listed in bot.properties if you want to remove it. Please note that if there are no rooms supplied, " +
                     "it defaults to one even if it's empty", true);
         }
+
         val added = site.config.removeHomeRoom(iRoom);
 
         if(!added){

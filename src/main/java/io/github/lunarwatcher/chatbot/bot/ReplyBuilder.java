@@ -1,6 +1,9 @@
 package io.github.lunarwatcher.chatbot.bot;
 
 public class ReplyBuilder {
+    public boolean discord = false;
+    private boolean fixed;
+
     StringBuilder builder = new StringBuilder();
     public ReplyBuilder() {
         builder = new StringBuilder();
@@ -10,10 +13,18 @@ public class ReplyBuilder {
         builder = new StringBuilder(initial);
     }
 
+    public ReplyBuilder(boolean discord){
+        builder = new StringBuilder();
+        this.discord = discord;
+    }
     public ReplyBuilder fixedInput(){
         //For-loop as adding four spaces directly doesn't work for some reason
-        for(int i = 0; i < 4; i++)
-            builder.append(" ");
+        if(!discord) {
+            for (int i = 0; i < 4; i++)
+                builder.append(" ");
+        }else{
+            fixed = true;
+        }
         return this;
     }
 
@@ -41,10 +52,18 @@ public class ReplyBuilder {
     }
 
     public String build(){
-        return builder.toString();
+        return toString();
     }
 
+    /**
+     * Returns the String formatted properly based on the site
+     * @return
+     */
     public String toString(){
-        return builder.toString();
+        if(!discord || !fixed)
+            return builder.toString();
+
+        String builderString = builder.toString();
+        return "```\n" + builderString + "\n```";
     }
 }

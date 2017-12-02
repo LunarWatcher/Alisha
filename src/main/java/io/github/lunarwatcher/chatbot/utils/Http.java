@@ -75,11 +75,6 @@ public class Http implements Closeable {
                 body = EntityUtils.toString(response.getEntity());
             }
 
-			/*
-			 * An HTTP 409 response means that the bot is sending messages too
-			 * quickly. The response body contains the number of seconds the bot
-			 * must wait before it can post another message.
-			 */
             if (statusCode == 409) {
                 Long waitTime = parse409Response(body);
                 sleep = (waitTime == null) ? 5000 : waitTime;
@@ -116,32 +111,5 @@ public class Http implements Closeable {
         client.close();
     }
 
-    public static class Response {
-        private int statusCode;
-        private String body;
 
-        public Response(int statusCode, String body) {
-            this.statusCode = statusCode;
-            this.body = body;
-        }
-
-        public int getStatusCode() {
-            return statusCode;
-        }
-
-        public String getBody() {
-            return body;
-        }
-
-        public JsonNode getBodyAsJson() throws JsonProcessingException {
-            ObjectMapper mapper = new ObjectMapper();
-            try {
-                return mapper.readTree(body);
-            } catch (JsonProcessingException e) {
-                throw e;
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
 }

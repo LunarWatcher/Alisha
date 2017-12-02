@@ -23,13 +23,15 @@ public class CommandCenter {
     @Getter
     public List<Command> commands;
     //List<Listener> listeners;
+    public String site;
 
-    public CommandCenter(Properties botProps, boolean shrugAlt) {
+    public CommandCenter(Properties botProps, boolean shrugAlt, String site) {
+        this.site = site;
         TRIGGER = botProps.getProperty("bot.trigger");
         commands = new ArrayList<>();
         commands.add(new HelpCommand(this));
         commands.add(new ShrugCommand(shrugAlt ? "¯\\\\_(ツ)_/¯" : "¯\\_(ツ)_/¯"));
-
+        commands.add(new AboutCommand());
         //listeners = new ArrayList<>();
     }
 

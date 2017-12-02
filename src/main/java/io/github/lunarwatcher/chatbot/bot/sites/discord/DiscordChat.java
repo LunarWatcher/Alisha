@@ -43,7 +43,7 @@ public class DiscordChat implements Chat{
         this.db = db;
         this.botProps = botProps;
         logIn();
-        commands = new CommandCenter(botProps, false);
+        commands = new CommandCenter(botProps, false, site.getName());
         commands.loadDiscord(this);
         commands.loadNSFW();
 

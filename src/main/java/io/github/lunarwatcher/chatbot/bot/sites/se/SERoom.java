@@ -9,6 +9,7 @@ import io.github.lunarwatcher.chatbot.bot.command.CommandCenter;
 import io.github.lunarwatcher.chatbot.bot.commands.BotConfig;
 import io.github.lunarwatcher.chatbot.bot.exceptions.RoomNotFoundException;
 import io.github.lunarwatcher.chatbot.utils.Http;
+import io.github.lunarwatcher.chatbot.utils.Response;
 import io.github.lunarwatcher.chatbot.utils.Utils;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -41,7 +42,7 @@ public class SERoom implements Closeable {
         this.parent = parent;
 
 
-        Http.Response connect = parent.getHttp().get(SEEvents.getRoom(parent.getSite().getUrl(), id));
+        Response connect = parent.getHttp().get(SEEvents.getRoom(parent.getSite().getUrl(), id));
         if(connect.getStatusCode() == 404){
             throw new RoomNotFoundException("SERoom not found!");
         }
@@ -76,7 +77,7 @@ public class SERoom implements Closeable {
     }
 
     public String getWSURL() throws IOException{
-        Http.Response response = parent.http.post(parent.getSite().getUrl() + "/ws-auth",
+        Response response = parent.http.post(parent.getSite().getUrl() + "/ws-auth",
                 "roomid", id,
                 "fkey", fkey
         );
@@ -202,7 +203,7 @@ public class SERoom implements Closeable {
     }
 
     public void sendMessage(String message) throws IOException{
-        Http.Response response = parent.getHttp().post(parent.getUrl() + "/chats/" + id + "/messages/new",
+        Response response = parent.getHttp().post(parent.getUrl() + "/chats/" + id + "/messages/new",
                 "text", message,
                 "fkey", fkey
         );
@@ -229,7 +230,8 @@ public class SERoom implements Closeable {
 
     @Override
     public void close() throws IOException {
-        parent.getHttp().post(SEEvents.leaveRoom(parent.getSite().getUrl(), id));
+        parent.getHttp().post(SEEvents.leaveRoom(parent.getSite().getUrl(), id),
+                "fkey", fkey);
         session.close();
     }
 

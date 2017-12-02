@@ -103,6 +103,8 @@ class UnSummon(val votes: Int, val chat: SEChat) : AbstractCommand("unsummon", a
                 return BMessage(Utils.getRandomHRMessage(), true);
             }
 
+
+
             var users: MutableList<Long>? = vts.get(iRoom);
 
             if(users == null){

@@ -180,4 +180,28 @@ public class BotCore {
         System.out.println("###########################");
     }
 
+    public class SaveThread extends Thread{
+        private Database db;
+
+        public SaveThread(Database d){
+            this.db = d;
+        }
+        public void run(){
+            if(db == null)
+                return;
+
+            while(true){
+                try{
+                    Thread.sleep(Constants.SAVE_INTERVAL);
+                }catch(Exception e){
+
+                }
+
+                if(db == null)
+                    break;
+                db.commit();
+            }
+        }
+    }
+
 }

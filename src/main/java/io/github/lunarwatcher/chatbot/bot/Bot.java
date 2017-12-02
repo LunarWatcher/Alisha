@@ -57,6 +57,9 @@ public class Bot {
     public void save(){
         for(Chat s : chats){
             s.save();
+            if(s instanceof SEChat){
+                ((SEChat) s).leaveAll();
+            }
         }
         database.commit();
     }
