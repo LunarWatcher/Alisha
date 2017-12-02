@@ -6,9 +6,9 @@ There's existing support for chat.stackoverflow.com, chat.meta.stackexchange.com
 
 The bot is a WIP, so more features will be added. Most notably, more commands are due very soon. Planned commands include:
 
-* About
-* learn/unlearn
-* A better help command
+* ~~About~~
+* ~~learn/unlearn~~
+* ~~A better help command~~
 * animal 
     * Show a random animal picture
 * ban/unban
