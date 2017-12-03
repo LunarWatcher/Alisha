@@ -236,20 +236,20 @@ class WhoMade(val commands: CommandCenter) : AbstractCommand("WhoMade", listOf()
         if(!matchesCommand(input))
             return null;
         try {
-            val arg = parseArguments(input)?.get(0) ?: return null;
+            val arg = parseArguments(input) ?: return null;
 
-            if(commands.isBuiltIn(arg)){
+            if(commands.isBuiltIn(arg["name"])){
                 return BMessage("It's a built-in command, meaning it was made by the project developer(s)", true);
             }
 
-            if(CommandCenter.tc.doesCommandExist(arg)){
-                CommandCenter.tc.commands
+            if(CommandCenter.tc.doesCommandExist(arg["name"] ?: return null)){
+                CommandCenter.tc.commands.entries
                         .forEach {
-                            if(it.name == arg)
+                            if(it.value.name == arg["name"])
                                 return BMessage("The command `" + arg + "` was made by a user with the User ID "
-                                        + it.creator + ". The command was created on " +
-                                        (if(it.site == "Unknown") "an unknown site"
-                                        else it.site) + ".", true)
+                                        + it.value.creator + ". The command was created on " +
+                                        (if(it.value.site == "Unknown") "an unknown site"
+                                        else it.value.site) + ".", true)
                         }
             }
         }catch(e: ClassCastException){

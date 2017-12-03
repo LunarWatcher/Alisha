@@ -25,10 +25,8 @@ class BotConfig{
     }
 
     fun addHomeRoom(newRoom: Int) : Boolean{
-        for(home in homes){
-            if(home == newRoom)
-                return false;
-        }
+        homes.filter { it == newRoom }
+                .forEach { return false }
 
         homes.add(newRoom);
         return true;
@@ -139,8 +137,6 @@ val BANNED = 3;
 
 data class ARRequests(val code: Int);
 
-//Committing and pushing...
-
 class ChangeCommandStatus(val center: CommandCenter) : AbstractCommand("declare", listOf(), "Changes a commands status. Only commands available on the site can be edited"){
     override fun handleCommand(input: String, user: User): BMessage? {
         if(!matchesCommand(input)){
@@ -169,11 +165,11 @@ class ChangeCommandStatus(val center: CommandCenter) : AbstractCommand("declare"
             }
             if (CommandCenter.tc.doesCommandExist(command)) {
                 CommandCenter.tc.commands.forEach{
-                    if(it.name == command) {
-                        if(it.nsfw == actual){
+                    if(it.value.name == command) {
+                        if(it.value.nsfw == actual){
                             return BMessage("The status was already set to " + (if (actual) "NSFW" else "SFW"), true);
                         }
-                        it.nsfw = actual;
+                        it.value.nsfw = actual;
 
                         return BMessage("Command status changed to " + (if (actual) "NSFW" else "SFW"), true);
                     }

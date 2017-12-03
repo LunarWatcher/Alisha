@@ -14,11 +14,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.Properties;
 
-/**
- * TODO Note to self: Using the launch method inherited from application starts the actual UI. call at the end of the main method
- *
- * Gotta get back to the UI later, the SE network isn't working correctly any more. Bot first, UI second :D
- */
+
 public class UI extends Application {
 
     public static Properties botProps;

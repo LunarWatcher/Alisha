@@ -26,12 +26,12 @@ public final class Constants {
     public static final String[] leaveMessages = {
             "Less to worry about I guess",
             "But I really liked it there!",
-            "I wasn't finished with my quest yet!",
+            "I wasn't finished with my quest yet! *walks away angry*",
             "Alright, left the room"
     };
 
     public static final String[] hrMessages = {
-            "I can't *just* leave my HOME!",
+            "I can't *just* leave my home!",
             "You can't make me",
             "There are still quests to finish, I can't leave yet!",
             "Yeah... not doing that."
@@ -39,13 +39,13 @@ public final class Constants {
 
     public static final String[] learnedMessages = {
             "The more I learn, the better",
-            "Oh, THAT's how I do that!",
+            "Oh, THAT's how I do that command!",
             "I already knew that! Yeah... *coughs*"
     };
 
     public static final String[] forgotMessage = {
             "Forgotten",
-            "I can't remember that one"
+            "I can't remember that one anymore"
     };
 
     public static String BANNED_USERS(String site){

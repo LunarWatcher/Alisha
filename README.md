@@ -11,13 +11,13 @@ The bot is a WIP, so more features will be added. Most notably, more commands ar
 * ~~A better help command~~
 * animal 
     * Show a random animal picture
-* ban/unban
+* ~~ban/unban~~
 * ~~admin/unadmin~~
     * expanded bot privileges, but not as much as the bot owner/s (hard-coded into the properties file)
 * status
     * message count from users
     * ~~A custom part on Discord~~
-* Random number
+* ~~Random number~~
 * stackexchange question search
 * LMGTFY
 * silence

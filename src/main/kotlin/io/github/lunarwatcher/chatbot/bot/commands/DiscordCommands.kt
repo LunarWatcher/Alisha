@@ -15,29 +15,29 @@ class NSFWState(val chat: DiscordChat) : AbstractCommand("nsfwtoggle", listOf(),
             return null;
         }
 
-        val arg: String? = parseArguments(input)?.get(0);
+        val arg = splitCommand(input);
         System.out.println("New requested NSFW state: " + arg);
 
         if(!Utils.isPriv(user.userID, chat.config) && !Utils.isAdmin(user.userID, chat.config)){
             return BMessage("You need to be either privileged or an admin to do that", true);
         }
 
-        if(arg == null)
+        if(arg.isEmpty())
             return null;
 
         try{
             //Extremely basic check to assert it's possible to cast the argument to a boolean value
-            arg.toBoolean();
+            arg["content"]?.toBoolean();
         }catch(e: ClassCastException){
             return BMessage("The new value has to be a boolean!", true);
         }
         val guild: Long = chat.getAssosiatedGuild(user.roomID);
         if(guild == -1L)
             return BMessage("You fucked up somewhere", false);
-        return if(chat.getNsfw(guild) == arg.toBoolean()){
-            BMessage("The guild already has NSFW mode " + (if(arg.toBoolean()) "enabled" else "disabled"), false);
+        return if(chat.getNsfw(guild) == arg["content"]?.toBoolean()){
+            BMessage("The guild already has NSFW mode " + (if(arg["content"]?.toBoolean() ?: return null) "enabled" else "disabled"), false);
         }else{
-            chat.setNsfw(guild, arg.toBoolean());
+            chat.setNsfw(guild, arg["content"]?.toBoolean() ?: return null);
             BMessage("Successfully changed NSFW mode", false);
         }
     }

@@ -2,7 +2,9 @@ package io.github.lunarwatcher.chatbot.bot.commands
 
 import io.github.lunarwatcher.chatbot.Constants.LEARNED_COMMANDS
 import io.github.lunarwatcher.chatbot.Database
+import io.github.lunarwatcher.chatbot.MapUtils
 import io.github.lunarwatcher.chatbot.bot.chat.BMessage
+import io.github.lunarwatcher.chatbot.bot.command.CmdInfo
 import io.github.lunarwatcher.chatbot.bot.command.CommandCenter
 import io.github.lunarwatcher.chatbot.utils.Utils
 import jdk.nashorn.internal.runtime.Undefined
@@ -13,15 +15,15 @@ import org.omg.CORBA.Object
 @Suppress("UNCHECKED_CAST", "UNUSED")
 class TaughtCommands(val db: Database){
 
-    val commands: MutableList<LearnedCommand>
+    val commands: MutableMap<CmdInfo, LearnedCommand>
 
     init{
-        commands = mutableListOf()
+        commands = mutableMapOf()
         load()
     }
 
     fun doesCommandExist(name: String) : Boolean{
-        return commands.any { it.name.toLowerCase() == name.toLowerCase() };
+        return MapUtils.get(name, commands) != null;
     }
 
     fun save(){
@@ -32,8 +34,8 @@ class TaughtCommands(val db: Database){
         val map: MutableList<Map<String, Any?>> = mutableListOf()
 
         commands.forEach{
-            lc ->
             val cmdMap = mutableMapOf<String, Any?>()
+            val lc: LearnedCommand = it.value;
 
             cmdMap.put("name", lc.name);
             cmdMap.put("desc", lc.desc);
@@ -84,19 +86,34 @@ class TaughtCommands(val db: Database){
 
             addCommand(LearnedCommand(name, desc, output, reply, creator, nsfw, site))
         }
+
+        fun addCommand(c: Command) {
+            if(c != LearnedCommand::class){
+                return
+            }
+            val name = c.name
+            val aliases = c.aliases
+            commands.putIfAbsent(CmdInfo(name, aliases), c as LearnedCommand)
+        }
     }
 
-    fun addCommand(command: LearnedCommand) = commands.add(command)
-    fun removeCommand(command: LearnedCommand) = commands.remove(command)
-    fun removeCommand(name: String) = commands.removeIf{it.name == name}
-    fun removeCommands(creator: Long) = commands.removeIf{it.creator == creator}
+    fun addCommand(command: LearnedCommand) = addCommand(CmdInfo(command.name, command.aliases), command)
+
+    fun addCommand(cmdInfo: CmdInfo, command: LearnedCommand) = commands.put(cmdInfo, command)
+    fun removeCommand(command: LearnedCommand){
+        removeCommand(command.name);
+    }
+    fun removeCommand(name: String){
+        commands.remove((commands.entries.firstOrNull{it.value.name == name} ?: return).key)
+    }
+    fun removeCommands(creator: Long) = commands.entries.removeIf{it.value.creator == creator}
 
     fun commandExists(cmdName: String) : Boolean{
-        commands.forEach{
-            if(it.name == cmdName)
-                return true;
-        }
-        return false;
+        return commands.entries.firstOrNull{it.value.name == cmdName} != null
+    }
+
+    fun get(cmdName: String) : LearnedCommand? {
+        return commands.entries.firstOrNull{it.value.name == cmdName}?.value
     }
 }
 
@@ -135,7 +152,7 @@ class Learn(val commands: TaughtCommands, val center: CommandCenter) : AbstractC
             if (input.contains("-s"))
                 input = input.replaceFirst("-s ", "")
         }
-        val args: List<String> = parseArguments(input) ?: return BMessage("You have to pass at least the command name", true);
+        val args = splitCommand(input);
 
         println(args)
         if(args.size < 2)
@@ -143,23 +160,25 @@ class Learn(val commands: TaughtCommands, val center: CommandCenter) : AbstractC
 
         var name = "undefined";
         var desc = "No description was supplied";
-        var creator = user.userID;
+        val creator = user.userID;
         var output = "undefined";
         var reply = false;
 
         for(i in 0 until args.size){
             if(i == 0){
-                name = args[i]
+                //The name is the name of the command used, not the one that's attempted learned.
+                name = args["content"]!!.split(" ", limit = 2)[0];
             }else if(i == 1){
-                output = args[i]
+
+                output = args["content"]!!.split(" ", limit = 2)[1];
             }else if(i == 2){
                 try {
-                    reply = args[i].toBoolean()
+                    reply = args["-r"]?.toBoolean() ?: return null;
                 }catch(e: ClassCastException){
                     return BMessage("The 3rd argument has to be a valid boolean!", true);
                 }
             }else if(i == 3){
-                desc = args[i]
+                desc = args["-d"] ?: return null;
             }
         }
 
@@ -181,7 +200,9 @@ class UnLearn(val commands: TaughtCommands, val center: CommandCenter) : Abstrac
     override fun handleCommand(input: String, user: User): BMessage? {
         if(!matchesCommand(input)) return null;
 
-        val name = input.replace(name + " ", "");
+        val `in` = splitCommand(input)
+
+        val name = `in`["content"] ?: return BMessage("I need to know what to forget", true);
 
         if(center.isBuiltIn(name)){
             return BMessage("You can't make me forget something that's hard-coded :>", true);

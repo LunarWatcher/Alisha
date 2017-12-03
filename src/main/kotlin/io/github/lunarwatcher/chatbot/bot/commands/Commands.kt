@@ -7,6 +7,11 @@ import io.github.lunarwatcher.chatbot.bot.chat.BMessage
 import io.github.lunarwatcher.chatbot.bot.command.CommandCenter
 import io.github.lunarwatcher.chatbot.bot.command.CommandCenter.TRIGGER
 
+import java.util.regex.Pattern
+
+val FLAG_REGEX = "( -[a-zA-Z]+)([a-zA-Z ]+(?!-\\w))"
+var ARGUMENT_PATTERN = Pattern.compile(FLAG_REGEX)
+
 interface Command{
     val name: String;
     val aliases: List<String>
@@ -46,35 +51,73 @@ abstract class AbstractCommand(override val name: String, override val aliases: 
         return aliases.any{split[0] == it.toLowerCase()}
     }
 
-    fun parseArguments(input: String) : List<String>?{
-        if(input.replace(name, "").isEmpty()){
-            //no arguments passed
-            return null;
+    fun splitCommand(input: String) : Map<String, String>{
+        val iMap = parseArguments(input);
+        val initialSplit = input.split(FLAG_REGEX.toRegex())[0];
+        val name = initialSplit.split(" ")[0];
+        if(name == input){
+            //No arguments, just the name
+            return mapOf("name" to name)
+        }
+        val content = initialSplit.substring(name.length + 1/*avoid the space*/)
+        val dMap = mutableMapOf("name" to name, "content" to content)
+
+        if(initialSplit == input){
+            return dMap
         }
 
-        val split = input.split(" ", limit = 2)[1]
-        //If a match isn't found, it ends up the exactly same as split
-        var multiArgs = split.split("&quot; &quot;")
-        val multiArgs2 = split.split("\" \"")
-        if(multiArgs != multiArgs2){
-            for(x in multiArgs){
-                if(x.contains("\"")){
-                    multiArgs = multiArgs2;
-                    break;
-                }
-            }
-        }
-        if(multiArgs.size == 1){
-            //Avoid IndexOutOfBounds by splitting the check in two
-            if(multiArgs[0] == split){
-                return listOf(split.replace("\"", "").replace("&quot;", ""));
-            }
-        }
-        val returnList: MutableList<String> = mutableListOf()
-        multiArgs.forEach{returnList.add(it.replace("\"", "").replace("&quot;", ""))}
+        //The argument map is empty, meaning the argument parser failed to find any. Just return the name and content
+        if(iMap.isEmpty())
+            return dMap;
 
-        return returnList;
+        for(e in iMap)
+            dMap.put(e.key, e.value)
+
+
+        return dMap;
+
     }
+
+    fun parseArguments(input: String) : Map<String, String>{
+        if(input.substring(name.length).isEmpty()){
+            //no arguments passed
+            return mapOf();
+        }
+
+        val retval: MutableMap<String, String> = mutableMapOf()
+        val matcher = ARGUMENT_PATTERN.matcher(input);
+        while(matcher.find()){
+            val groups = matcher.groupCount()
+            if(groups == 2){
+                val g1 = matcher.group(1)
+                val g2 = matcher.group(2);
+
+                retval.put(g1.substring(1, g1.length), g2.substring(1, g2.length))
+            }
+        }
+
+        return retval;
+    }
+
+    fun removeName(input: String) : String{
+        if(input.substring(name.length).startsWith(" ")){
+            //If the name is removed successfully, the string should start with a space
+            return input.substring(name.length);
+        }
+
+        //otherwise it's an alias
+
+        aliases.forEach { alias->
+            if(input.substring(alias.length).startsWith(" ")){
+                return input.substring(alias.length);
+            }
+        }
+        //If it can't find in either the name or the alias, that means the command doesn't match.
+        //Since this is checked with the matchesCommand check, this last line here should never
+        //be called.
+        return input;
+    }
+
 }
 
 class HelpCommand(var center: CommandCenter) : AbstractCommand("help", listOf(),
@@ -98,13 +141,13 @@ class HelpCommand(var center: CommandCenter) : AbstractCommand("help", listOf(),
 
         if(!center.commands.isEmpty()) {
 
-            for (command: Command in center.commands) {
+            for (command: Command in center.commands.values) {
                 commands.put(command.name, command.desc);
             }
         }
 
         if(!CommandCenter.tc.commands.isEmpty()){
-            for(cmd: LearnedCommand in CommandCenter.tc.commands){
+            for(cmd: LearnedCommand in CommandCenter.tc.commands.values){
                 learnedCommands.put(cmd.name, cmd.desc)
             }
         }
@@ -125,7 +168,9 @@ class HelpCommand(var center: CommandCenter) : AbstractCommand("help", listOf(),
 
         if(!learnedCommands.isEmpty()){
             reply.fixedInput().append("==================== Learned Commands").nl()
-            for (command in CommandCenter.tc.commands) {
+            for (cmd in CommandCenter.tc.commands.entries) {
+                val command: LearnedCommand = cmd.value;
+
                 if(command.nsfw && !user.nsfwSite){
                     continue;
                 }

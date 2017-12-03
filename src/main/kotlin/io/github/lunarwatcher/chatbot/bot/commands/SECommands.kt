@@ -14,7 +14,6 @@ class Summon(val votes: Int, val chat: SEChat) : AbstractCommand("summon", listO
 
             return null;
         }
-        println("It's this command: " + input)
         var votes = this.votes;
 
         if(Utils.isAdmin(user.userID, chat.config))
@@ -82,7 +81,6 @@ class UnSummon(val votes: Int, val chat: SEChat) : AbstractCommand("unsummon", l
         if(!matchesCommand(input)){
             return null;
         }
-        println("It's this command: " + input)
         var votes = this.votes;
 
         if(Utils.isAdmin(user.userID, chat.config))

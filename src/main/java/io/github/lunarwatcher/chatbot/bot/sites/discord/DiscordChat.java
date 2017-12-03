@@ -169,7 +169,33 @@ public class DiscordChat implements Chat{
                         event.getChannel().sendMessage("Look up the manual maybe?");
                     }else {
                         for (BMessage r : replies) {
-                            event.getChannel().sendMessage(r.content);
+                            List<String> items = new ArrayList<>();
+                            if(r.content.length() > 2000){
+                                int i = 0;
+                                int total = r.content.length();
+                                while(i < total){
+                                    int remaining = total - i;
+                                    int sub = 0;
+                                    if(remaining >= 2000) {
+                                        sub = 2000;
+                                    }else{
+                                        sub = remaining;
+                                    }
+                                    items.add(r.content.substring(i, i + sub));
+                                    i += sub;
+                                }
+
+                                for(int x = 0; x < (items.size() > 5 ? 5 : items.size()); x++){
+                                    event.getChannel().sendMessage(items.get(x));
+                                    try {
+                                        Thread.sleep(100);
+                                    }catch(InterruptedException e){
+
+                                    }
+                                }
+
+                            }else
+                                event.getChannel().sendMessage(r.content);
                         }
                     }
                 } catch (IOException e) {
