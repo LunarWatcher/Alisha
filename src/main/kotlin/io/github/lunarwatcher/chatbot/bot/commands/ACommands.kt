@@ -1,6 +1,7 @@
 package io.github.lunarwatcher.chatbot.bot.commands
 
 import io.github.lunarwatcher.chatbot.Constants
+import io.github.lunarwatcher.chatbot.bot.ReplyBuilder
 import io.github.lunarwatcher.chatbot.bot.chat.BMessage
 import io.github.lunarwatcher.chatbot.bot.command.CommandCenter
 import io.github.lunarwatcher.chatbot.bot.command.CommandCenter.tc
@@ -77,71 +78,45 @@ class RemoveHome(val site: SEChat) : AbstractCommand("remhome", listOf(),
     }
 }
 
-class AddAdmin(val site: Chat) : AbstractCommand("admin", listOf(), "Adds an admin to the bot. Only usable by hardcoded bot admins"){
+class UpdateRank(val site: Chat) : AbstractCommand("promote", listOf("demote"), "Changes a users rank."){
+
     override fun handleCommand(input: String, user: User): BMessage? {
-        if(!matchesCommand(input))
+        if(!matchesCommand(input)){
+            //final command match assertion check
             return null;
-        if(!Utils.isHardcodedAdmin(user.userID, site)){
-            return BMessage("You don't have the rights required to do that", true);
         }
 
-        val type = input.replace(name + " ", "");
-        if(type == input)
-            return BMessage("Specify a user to add -_-", true);
-
-        if(type.isEmpty()){
-            return BMessage("Define a user to add", true);
-        }
-        val iUser: Long
+        val split = input.split(" ")
+        if(split.size < 3)
+            return BMessage("Missing parameters. Found " + split.size + ", expected 3", true);
+        val updatingUser: Long
+        val newRank: Int
         try {
-            iUser = type.split(" ")[0].toLong()
+            updatingUser = split[1].toLong();
+            newRank = split[2].toInt();
 
         }catch(e: ClassCastException){
-            return BMessage("Not a valid user ID!", true);
+            return BMessage("You have to supply a valid user ID and new rank", true);
+        }
+        if(newRank < 0 || newRank > 10)
+            return BMessage("That's not a valid rank within the range [0, 10]", true);
+
+        val currentRank = Utils.getRank(updatingUser, site.config)
+
+        val cuRank = Utils.getRank(user.userID, site.config)
+
+        if(currentRank >= cuRank)
+            return BMessage("You can't change the rank of users with the same or higher rank as yourself", true);
+
+        if(newRank >= cuRank)
+            return BMessage("You can't promote other users to the same or higher rank as yourself", true)
+
+        if((newRank == 0 || currentRank == 0) && cuRank < 8){
+            return BMessage("You can't ban or unban users with your current rank", true);
         }
 
-
-
-        val response = site.config.addAdmin(iUser);
-
-        return when(response.code){
-            EXISTED -> BMessage("User is already an admin", true);
-            ADDED -> BMessage("Successfully added new admin", true);
-            BANNED -> BMessage("USer not added, (s)he is banned", true);
-            else -> BMessage("User is hard-coded and can't be added", true)
-        }
-    }
-}
-
-class RemoveAdmin(val site: Chat) : AbstractCommand("remadmin", listOf(), "Removes an admin from the bot. Only usable by hardcoded bot admins"){
-    override fun handleCommand(input: String, user: User): BMessage? {
-        if(!matchesCommand(input))
-            return null;
-        if(!Utils.isHardcodedAdmin(user.userID, site)){
-            return BMessage("You don't have the rights required to do that", true);
-        }
-
-        val type = input.replace(name + " ", "");
-        if(type == input)
-            return BMessage("Specify a user to remove -_-", true);
-
-        if(type.isEmpty()){
-            return BMessage("Specify a user to remove -_-", true);
-        }
-        val iUser: Long
-        try {
-            iUser = type.split(" ")[0].toLong()
-
-        }catch(e: ClassCastException){
-            return BMessage("Not a valid user ID!", true);
-        }
-
-        val response = site.config.removeAdmin(iUser);
-        return when(response.code){
-            EXISTED -> BMessage("User wasn't an admin in the first place", true);
-            ADDED -> BMessage("Successfully removed admin", true);
-            else -> BMessage("User is hard-coded and can't be removed as an admin", true)
-        }
+        site.config.addRank(updatingUser, newRank, null);
+        return BMessage("Rank for the user has successfully been updated", true);
     }
 }
 
@@ -149,17 +124,13 @@ class BanUser(val site: Chat) : AbstractCommand("ban", listOf(), "Bans a user fr
     override fun handleCommand(input: String, user: User): BMessage? {
         if(!matchesCommand(input))
             return null;
-        if(!Utils.isHardcodedAdmin(user.userID, site)){
-            return BMessage("You don't have the rights required to do that", true);
-        }
-
 
         val type = input.replace(name + " ", "");
         if(type == input)
-            return BMessage("Specify a user to add -_-", true);
+            return BMessage("Specify a user to ban -_-", true);
 
         if(type.isEmpty()){
-            return BMessage("Define a user to add", true);
+            return BMessage("Specify a user to ban", true);
         }
         val iUser: Long
         try {
@@ -172,17 +143,26 @@ class BanUser(val site: Chat) : AbstractCommand("ban", listOf(), "Bans a user fr
         if(Utils.isHardcodedAdmin(iUser, site)){
             return BMessage("You can't ban other hardcoded moderators", true);
         }
-        if(Utils.isAdmin(iUser, site.config) && !Utils.isHardcodedAdmin(user.userID, site)){
-            return BMessage("You can't ban other moderators -_-", true);
+
+
+
+        val currentRank = Utils.getRank(iUser, site.config)
+
+        val cuRank = Utils.getRank(user.userID, site.config)
+
+        if(currentRank >= cuRank)
+            return BMessage("You can't change the rank of users with the same or higher rank as yourself", true);
+
+        if(cuRank < 8){
+            return BMessage("You can't ban or unban users with your current rank", true);
         }
 
-        val response = site.config.ban(iUser);
+        if(currentRank == 10)
+            return BMessage("You can't ban bot admins...", true);
 
-        return when(response.code){
-            EXISTED -> BMessage("User is already banned", true);
-            ADDED -> BMessage("User was successfully banned", true);
-            else -> BMessage("User is hard-coded and can't be banned", true)
-        }
+        site.config.addRank(iUser, 0, null);
+
+        return BMessage("Updated user status", true);
     }
 }
 
@@ -190,16 +170,13 @@ class Unban(val site: Chat) : AbstractCommand("unban", listOf(), "Unbans a banne
     override fun handleCommand(input: String, user: User): BMessage? {
         if(!matchesCommand(input))
             return null;
-        if(!Utils.isAdmin(user.userID, site.config)){
-            return BMessage("You don't have the rights required to do that", true);
-        }
 
         val type = input.replace(name + " ", "");
         if(type == input)
-            return BMessage("Specify a user to remove -_-", true);
+            return BMessage("Specify a user to unban -_-", true);
 
         if(type.isEmpty()){
-            return BMessage("Specify a user to remove -_-", true);
+            return BMessage("Specify a user to unban", true);
         }
         val iUser: Long
         try {
@@ -209,12 +186,27 @@ class Unban(val site: Chat) : AbstractCommand("unban", listOf(), "Unbans a banne
             return BMessage("Not a valid user ID!", true);
         }
 
-        val response = site.config.unban(iUser);
-        return when(response.code){
-            EXISTED -> BMessage("The user you tried to unban isn't banned", true);
-            ADDED -> BMessage("User successfully banned", true);
-            else -> BMessage("If you see this in chat, something has gone extremely wrong", true)
+        if(Utils.isHardcodedAdmin(iUser, site)){
+            return BMessage("You can't ban other hardcoded moderators", true);
         }
+
+        val currentRank = Utils.getRank(iUser, site.config)
+
+        val cuRank = Utils.getRank(user.userID, site.config)
+
+        if(currentRank >= cuRank)
+            return BMessage("You can't ban users with the same or higher rank as yourself", true);
+
+        if(cuRank < 8){
+            return BMessage("You can't ban or unban users with your current rank", true);
+        }
+
+        if(currentRank == 10)
+            return BMessage("You can't ban bot admins...", true);
+
+        site.config.addRank(iUser, 0, null);
+
+        return BMessage("Updated user status", true);
     }
 }
 
@@ -257,5 +249,26 @@ class WhoMade(val commands: CommandCenter) : AbstractCommand("WhoMade", listOf()
         }
 
         return BMessage("That command doesn't appear to exist.", true);
+    }
+}
+
+//Committing and pushing...
+
+class DebugRanks(val site: Chat) : AbstractCommand("rankdebug", listOf(), "Debugs ranks"){
+    override fun handleCommand(input: String, user: User): BMessage? {
+        if(!matchesCommand(input))
+            return null;
+
+        if(Utils.getRank(user.userID, site.config) < 10)
+            return BMessage("You can't do that", true);
+
+        val reply: ReplyBuilder = ReplyBuilder(site.name == "discord")
+        reply.fixedInput().append("Username - user ID - rank").nl();
+        for(rankInfo in site.config.ranks){
+            val ri = rankInfo.value;
+            reply.fixedInput().append(ri.username).append(" - ").append(ri.uid).append(" - ").append(ri.rank).nl()
+        }
+
+        return BMessage(reply.toString(), false);
     }
 }

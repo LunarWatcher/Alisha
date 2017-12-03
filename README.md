@@ -9,6 +9,7 @@ The bot is a WIP, so more features will be added. Most notably, more commands ar
 * ~~About~~
 * ~~learn/unlearn~~
 * ~~A better help command~~
+* ~~Help with specific commands~~
 * animal 
     * Show a random animal picture
 * ~~ban/unban~~
@@ -19,7 +20,7 @@ The bot is a WIP, so more features will be added. Most notably, more commands ar
     * ~~A custom part on Discord~~
 * ~~Random number~~
 * stackexchange question search
-* LMGTFY
+* ~~LMGTFY~~
 * silence
     * Ignores specific users for a short period of time, **not to be confused with ban**.
     * Ignore all users for a short period of time

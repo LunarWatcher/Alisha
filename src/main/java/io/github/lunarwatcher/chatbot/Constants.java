@@ -1,5 +1,8 @@
 package io.github.lunarwatcher.chatbot;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public final class Constants {
     public static final boolean AUTO_BOOT = false;
     public static boolean LEAVE_ROOM_ON_UNHOME;
@@ -15,6 +18,7 @@ public final class Constants {
     public static final int RELOCATION_VOTES = 3;
     public static final String LEARNED_COMMANDS = "learned";
     public static final boolean DEFAULT_NSFW = true;
+    public static final int DEFAULT_RANK = 1;
 
     public static final String[] joinMessages = {
             "As you command, I'll leave for that room as soon as possible",
@@ -64,4 +68,23 @@ public final class Constants {
         return "home-rooms-" + site;
     }
 
+    public static String RANKS(String site){
+        return "ranks-" + site;
+    }
+
+    public static class Ranks{
+        public static Map<Integer, String> ranks;
+
+        static {
+            ranks = new HashMap<>();
+            ranks.put(0, "Banned");
+            ranks.put(1, "User");
+            //TODO be creative here later
+            ranks.put(10, "Owner");
+        }
+
+        public static String getRank(int level){
+            return ranks.get(level);
+        }
+    }
 }

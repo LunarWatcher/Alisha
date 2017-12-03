@@ -39,6 +39,11 @@ public class DiscordChat implements Chat{
     public List<Long> hardcodedAdmins = new ArrayList<>();
     List<Long> notifiedBanned = new ArrayList<>();
     Map<Long, Boolean> nsfw = new HashMap<>();
+    /**
+     * Not stored in memory as it is a good idea to check for updates every once in a while, and with a given bot reboot
+     * rate keeping this in memory and not saved in the database is the best way for getting updates for usernames.
+     */
+    List<Long> checkedUsers = new ArrayList<>();
 
     public DiscordChat(Site site, Properties botProps, Database db) throws IOException {
         this.site = site;
@@ -46,7 +51,7 @@ public class DiscordChat implements Chat{
         this.botProps = botProps;
         logIn();
         commands = new CommandCenter(botProps, false, this);
-        commands.loadDiscord(this);
+        commands.loadDiscord();
         commands.loadNSFW();
 
         channels = new ArrayList<>();
@@ -105,6 +110,10 @@ public class DiscordChat implements Chat{
 
     @EventSubscriber
     public void onMessageReceived(MessageReceivedEvent event){
+        if(!checkedUsers.contains(event.getAuthor().getLongID())){
+            checkedUsers.add(event.getAuthor().getLongID());
+            commands.hookupToRanks(event.getAuthor().getLongID(), event.getAuthor().getName());
+        }
         String msg = event.getMessage().getContent();
         if(CommandCenter.isCommand(msg)){
 

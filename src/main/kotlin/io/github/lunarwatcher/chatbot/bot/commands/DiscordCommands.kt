@@ -18,8 +18,8 @@ class NSFWState(val chat: DiscordChat) : AbstractCommand("nsfwtoggle", listOf(),
         val arg = splitCommand(input);
         System.out.println("New requested NSFW state: " + arg);
 
-        if(!Utils.isPriv(user.userID, chat.config) && !Utils.isAdmin(user.userID, chat.config)){
-            return BMessage("You need to be either privileged or an admin to do that", true);
+        if(Utils.getRank(user.userID, chat.config) < 7){
+            return BMessage("You have to be rank 7 or higher to do that", true);
         }
 
         if(arg.isEmpty())

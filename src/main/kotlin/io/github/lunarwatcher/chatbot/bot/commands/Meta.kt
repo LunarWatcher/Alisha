@@ -1,5 +1,6 @@
 package io.github.lunarwatcher.chatbot.bot.commands
 
+import io.github.lunarwatcher.chatbot.Constants.Ranks.ranks
 import io.github.lunarwatcher.chatbot.bot.chat.BMessage
 import io.github.lunarwatcher.chatbot.bot.command.CommandCenter
 import io.github.lunarwatcher.chatbot.bot.sites.Chat
@@ -10,17 +11,13 @@ import sun.java2d.pipe.AAShapePipe
 //TODO make this better kotlin
 class BotConfig{
     val site: Chat;
-    val admins: MutableList<Long>;
-    val privelege: MutableList<Long>;
-    val banned: MutableList<Long>;
+    val ranks: MutableMap<Long, RankInfo>;
     val homes: MutableList<Int>;
 
     constructor(site: Chat){
         this.site = site;
 
-        admins = mutableListOf()
-        privelege = mutableListOf()
-        banned = mutableListOf()
+        ranks = mutableMapOf();
         homes = mutableListOf()
     }
 
@@ -43,92 +40,23 @@ class BotConfig{
         return false;
     }
 
-    fun addAdmin(newUser: Long) : ARRequests{
-        if(Utils.isBanned(newUser, this)){
-            return ARRequests(BANNED)
-        }
-        if(Utils.isAdmin(newUser, this)){
-            return ARRequests(EXISTED);
-        }
-
-        admins.add(newUser)
-        return ARRequests(ADDED);
-    }
-
-    fun removeAdmin(rr: Long) : ARRequests{
-        if(Utils.isHardcodedAdmin(rr, site))
-            return ARRequests(HARDCODED);
-
-        for(i in (admins.size - 1) downTo 0){
-            if(admins[i] == rr){
-                admins.removeAt(i)
-                return ARRequests(ADDED);
-            }
-        }
-        return ARRequests(EXISTED);
-    }
-
-    fun addPriv(newUser: Long){
-        if(Utils.isBanned(newUser, this)){
-            return
-        }
-        privelege.filter { it == newUser }
-                .forEach { return }
-
-        privelege.add(newUser)
-    }
-
-    fun removePriv(rr: Long){
-        for(i in (privelege.size - 1) downTo 0){
-            if(privelege[i] == rr){
-                privelege.removeAt(i)
-            }
-        }
-    }
-
-    fun ban(newUser: Long) : ARRequests{
-        if(Utils.isHardcodedAdmin(newUser, site)){
-            return ARRequests(HARDCODED)
-        }
-        if(Utils.isBanned(newUser, this)){
-            return ARRequests(EXISTED);
-        }
-
-        banned.add(newUser)
-        return ARRequests(ADDED);
-    }
-
-    fun unban(rr: Long)  : ARRequests{
-        if(Utils.isBanned(rr, this)){
-            banned.remove(rr);
-            return ARRequests(ADDED);
-        }
-
-        return ARRequests(EXISTED);
-    }
-
-    fun set(homes: List<Int>?, admins: List<Long>?, prived: List<Long>?, banned: List<Long>?){
+    fun set(homes: List<Int>?, ranked: Map<Long, RankInfo>?){
         if(homes != null) {
             this.homes.addAll(homes)
         }
-        if(admins != null) {
-            for(x in admins){
-                this.admins.add(x.toLong());
-            }
-        }
-        if(prived != null){
-            for(x in privelege){
-                this.privelege.add(x.toLong());
-            }
-        }
-        if(banned != null){
-            for(x in banned){
-                this.banned.add(x.toLong());
-            }
+        ranked?.forEach{
+            this.ranks.put(it.key, it.value)
         }
     }
 
+    fun addRank(user: Long, rank: Int, username: String?){
+        ranks.put(user, RankInfo(user, rank, username));
+    }
+
+    fun getRank(user: Long) : RankInfo? = ranks[user];
 }
+
+class RankInfo(val uid: Long, val rank: Int, var /*usernames can change*/username: String?/*Nullable because it isn't always this can be passed*/)
 
 val EXISTED: Int = 0;
 val ADDED: Int = 1;
@@ -143,7 +71,7 @@ class ChangeCommandStatus(val center: CommandCenter) : AbstractCommand("declare"
             return null;
         }
 
-        if(!Utils.isAdmin(user.userID, center.site.config) && !Utils.isPriv(user.userID, center.site.config)){
+        if(Utils.getRank(user.userID, center.site.config) < 7){
             return BMessage("I'm afraid I can't let you do that, User", true);
         }
         try {

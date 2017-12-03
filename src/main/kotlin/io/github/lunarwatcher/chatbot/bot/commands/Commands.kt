@@ -6,6 +6,7 @@ import io.github.lunarwatcher.chatbot.bot.ReplyBuilder
 import io.github.lunarwatcher.chatbot.bot.chat.BMessage
 import io.github.lunarwatcher.chatbot.bot.command.CommandCenter
 import io.github.lunarwatcher.chatbot.bot.command.CommandCenter.TRIGGER
+import java.awt.SystemColor.info
 
 import java.util.regex.Pattern
 
@@ -129,62 +130,93 @@ class HelpCommand(var center: CommandCenter) : AbstractCommand("help", listOf(),
             return null;
         }
 
+        val `in` = splitCommand(input)
+        if(`in`.size == 1) {
 
-        //No arguments supplied
-        val reply = ReplyBuilder(center.site.name == "discord");
-        reply.fixedInput().append("###################### Help ######################")
-                .nl().fixedInput().nl();
-        val commands: MutableMap<String, String> = mutableMapOf()
-        val learnedCommands: MutableMap<String, String> = mutableMapOf()
+            //No arguments supplied
+            val reply = ReplyBuilder(center.site.name == "discord");
+            reply.fixedInput().append("###################### Help ######################")
+                    .nl().fixedInput().nl();
+            val commands: MutableMap<String, String> = mutableMapOf()
+            val learnedCommands: MutableMap<String, String> = mutableMapOf()
 
-        val names: MutableList<String> = mutableListOf()
+            val names: MutableList<String> = mutableListOf()
 
-        if(!center.commands.isEmpty()) {
+            if (!center.commands.isEmpty()) {
 
-            for (command: Command in center.commands.values) {
-                commands.put(command.name, command.desc);
-            }
-        }
-
-        if(!CommandCenter.tc.commands.isEmpty()){
-            for(cmd: LearnedCommand in CommandCenter.tc.commands.values){
-                learnedCommands.put(cmd.name, cmd.desc)
-            }
-        }
-
-        names.addAll(commands.keys);
-        names.addAll(learnedCommands.keys)
-
-        val maxLen = getMaxLen(names);
-
-        if(!commands.isEmpty()) {
-            reply.fixedInput().append("==================== Commands").nl()
-            for (command in commands) {
-                reply.fixedInput().append(TRIGGER + command.key);
-                reply.append(repeat(" ", maxLen - command.key.length + 2) + "| ")
-                        .append(command.value).nl();
-            }
-        }
-
-        if(!learnedCommands.isEmpty()){
-            reply.fixedInput().append("==================== Learned Commands").nl()
-            for (cmd in CommandCenter.tc.commands.entries) {
-                val command: LearnedCommand = cmd.value;
-
-                if(command.nsfw && !user.nsfwSite){
-                    continue;
+                for (command: Command in center.commands.values) {
+                    commands.put(command.name, command.desc);
                 }
-
-                reply.fixedInput().append(TRIGGER + command.name);
-                reply.append(repeat(" ", maxLen - command.name.length + 2) + "| ")
-                        .append(command.desc);
-                if(command.nsfw)
-                    reply.append(" - NSFW");
-                reply.nl();
             }
-        }
-        return BMessage(reply.toString(), false);
 
+            if (!CommandCenter.tc.commands.isEmpty()) {
+                for (cmd: LearnedCommand in CommandCenter.tc.commands.values) {
+                    learnedCommands.put(cmd.name, cmd.desc)
+                }
+            }
+
+            names.addAll(commands.keys);
+            names.addAll(learnedCommands.keys)
+
+            val maxLen = getMaxLen(names);
+
+            if (!commands.isEmpty()) {
+                reply.fixedInput().append("==================== Commands").nl()
+                for (command in commands) {
+                    reply.fixedInput().append(TRIGGER + command.key);
+                    reply.append(repeat(" ", maxLen - command.key.length + 2) + "| ")
+                            .append(command.value).nl();
+                }
+            }
+
+            if (!learnedCommands.isEmpty()) {
+                reply.fixedInput().append("==================== Learned Commands").nl()
+                for (cmd in CommandCenter.tc.commands.entries) {
+                    val command: LearnedCommand = cmd.value;
+
+                    if (command.nsfw && !user.nsfwSite) {
+                        continue;
+                    }
+
+                    reply.fixedInput().append(TRIGGER + command.name);
+                    reply.append(repeat(" ", maxLen - command.name.length + 2) + "| ")
+                            .append(command.desc);
+                    if (command.nsfw)
+                        reply.append(" - NSFW");
+                    reply.nl();
+                }
+            }
+            return BMessage(reply.toString(), false);
+        }else{
+            val cmd = (`in`["content"] ?: return null).toLowerCase();
+            var desc: String
+            var help: String
+            var name: String
+            //No clue what to call this thing
+            var d: String;
+
+            if(center.isBuiltIn(cmd)){
+                desc = center.get(cmd)?.desc ?: return null;
+                help = center.get(cmd)?.help ?: return null;
+                name = center.get(cmd)?.name ?: return null;
+                d = "Built in command. "
+            }else if(CommandCenter.tc.doesCommandExist(cmd)){
+                desc = CommandCenter.tc.get(cmd)?.desc ?: return null;
+                help = CommandCenter.tc.get(cmd)?.help ?: return null;
+                name = CommandCenter.tc.get(cmd)?.name ?: return null;
+                d = "Taught command. (Learned to the bot by user " + CommandCenter.tc.get(cmd)?.creator + " on " + CommandCenter.tc.get(cmd)?.site + "). "
+            }else{
+                return BMessage("The command you tried finding help for (`$cmd`) does not exist. Make sure you've got the name right", true)
+            }
+
+            val reply: ReplyBuilder = ReplyBuilder(center.site.name == "discord");
+
+            reply.fixedInput().append(d).append("`" + TRIGGER).append(name).append("`: " + desc)
+                    .nl().fixedInput().append(help)
+
+
+            return BMessage(reply.toString(), true);
+        }
     }
 
 }

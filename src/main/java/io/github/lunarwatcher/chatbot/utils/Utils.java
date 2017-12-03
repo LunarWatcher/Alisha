@@ -3,6 +3,7 @@ package io.github.lunarwatcher.chatbot.utils;
 import io.github.lunarwatcher.chatbot.Constants;
 import io.github.lunarwatcher.chatbot.Database;
 import io.github.lunarwatcher.chatbot.bot.commands.BotConfig;
+import io.github.lunarwatcher.chatbot.bot.commands.RankInfo;
 import io.github.lunarwatcher.chatbot.bot.sites.Chat;
 import io.github.lunarwatcher.chatbot.bot.sites.se.SEChat;
 import org.jetbrains.annotations.NotNull;
@@ -13,9 +14,7 @@ import sx.blah.discord.util.RequestBuffer;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -90,30 +89,61 @@ public final class Utils {
     }
 
     public static void saveConfig(BotConfig cf, Database db){
-        List<Long> banned = cf.getBanned();
-        List<Long> admin = cf.getAdmins();
-        List<Long> priv = cf.getPrivelege();
+        Map<Long, RankInfo> ranks = cf.getRanks();
         List<Integer> homes = cf.getHomes();
 
         String site = cf.getSite().getName();
 
         db.put(Constants.HOME_ROOMS(site), homes);
-        db.put(Constants.ADMIN_USERS(site), admin);
-        db.put(Constants.PRIVILEGE_USERS(site), priv);
-        db.put(Constants.BANNED_USERS(site), banned);
 
+        List<Map<String, Object>> cRanks = new ArrayList<>();
+
+        for(Map.Entry<Long, RankInfo> entry : ranks.entrySet()){
+            Map<String, Object> m = new HashMap<>();
+            m.put("uid", entry.getValue().getUid());
+            m.put("rank", entry.getValue().getRank());
+            m.put("username", entry.getValue().getUsername());
+            cRanks.add(m);
+        }
+        db.put(Constants.RANKS(site), cRanks);
         db.commit();
     }
 
+    @SuppressWarnings("unchecked")
     public static void loadConfig(BotConfig cf, Database db){
         String site = cf.getSite().getName();
         //Possible ClassCastException can occur from this
         try {
             List<Integer> homes = (List<Integer>) db.get(Constants.HOME_ROOMS(site));
-            List<Long> admins = (List<Long>) db.get(Constants.ADMIN_USERS(site));
-            List<Long> prived = (List<Long>) db.get(Constants.PRIVILEGE_USERS(site));
-            List<Long> banned = (List<Long>) db.get(Constants.BANNED_USERS(site));
-            cf.set(homes, admins, prived, banned);
+            List<Map<String, Object>> dbRank = (List<Map<String, Object>>) db.get(Constants.RANKS(site));
+
+            Map<Long, RankInfo> ranked = new HashMap<>();
+
+            if(dbRank != null) {
+
+                for (Map<String, Object> map : dbRank) {
+                    long userID = 0;
+                    int rank = 0;
+                    String username = null;
+                    for (Map.Entry<String, Object> entry : map.entrySet()) {
+
+                        String key = entry.getKey();
+                        Object value = entry.getValue();
+
+                        if (key.equals("uid"))
+                            userID = Long.parseLong(value.toString());
+                        else if (key.equals("rank"))
+                            rank = Integer.parseInt(value.toString());
+                        else if (key.equals("username"))
+                            username = (String) value;
+                        else System.err.println("Something went to hell with the key " + key);
+
+                    }
+
+                    ranked.put(userID, new RankInfo(userID, rank, username));
+                }
+            }else ranked = null;
+            cf.set(homes, ranked);
         }catch(Exception e){
             e.printStackTrace();
 
@@ -123,30 +153,25 @@ public final class Utils {
     //Utility method for checking etc classes defined in BotConfig
 
     public static boolean isAdmin(long user, BotConfig conf){
-        for(Long u : conf.getAdmins()){
-            if(u == user){
-                return true;
-            }
+        if(conf.getRanks().get(user) != null){
+            //>= 7 is admin. Keeping this method even though there are differences how it's treated
+            //because 7 is still more or less a universal admin. But for something that requires a level
+            //8 admin or higher, that's a different scenario that requires a custom implementation
+            return conf.getRanks().get(user).getRank() >= 7;
+        }else{
+            //Not found? defaults to 1, or a basic user. Hence they can't be banned here
+            return false;
         }
-        return false;
     }
 
     public static boolean isBanned(long user, BotConfig conf){
-        for(Long u : conf.getBanned()){
-            if(u == user){
-                return true;
-            }
+        if(conf.getRanks().get(user) != null){
+            //0 = banned
+            return conf.getRanks().get(user).getRank() == 0;
+        }else{
+            //Not found? defaults to 1, or a basic user. Hence they can't be banned here
+            return false;
         }
-        return false;
-    }
-
-    public static boolean isPriv(long user, BotConfig conf){
-        for(Long u : conf.getPrivelege()){
-            if(u == user){
-                return true;
-            }
-        }
-        return false;
     }
 
     public static boolean isHome(int room, BotConfig conf){
@@ -199,7 +224,9 @@ public final class Utils {
         }
 
         for(Long i : c.getHardcodedAdmins()){
-            c.getConfig().addAdmin(i);
+            //assume the hard-coded admins can essentially be considered owners. Be careful with
+            //adding users as admins in bot.properties as this will grant level 10 access to the bot
+            c.getConfig().addRank(i, 10, null);
         }
     }
 
@@ -215,4 +242,11 @@ public final class Utils {
     public static String getRandomForgottenMessage(){
         return Constants.forgotMessage[random.nextInt(Constants.forgotMessage.length)];
     }
+
+    public static int getRank(long user, BotConfig config){
+        if(config.getRanks().get(user) != null){
+            return config.getRanks().get(user).getRank();
+        }else return Constants.DEFAULT_RANK;
+    }
+
 }

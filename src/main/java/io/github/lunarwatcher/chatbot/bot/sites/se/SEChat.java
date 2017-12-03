@@ -67,6 +67,7 @@ public class SEChat implements Chat {
 
     public List<Integer> hardcodedRooms = new ArrayList<>();
     public List<Long> hardcodedAdmins = new ArrayList<>();
+    List<Long> checkedUsers = new ArrayList<>();
 
     public Properties botProps;
 
@@ -129,7 +130,7 @@ public class SEChat implements Chat {
 
 
         commands = new CommandCenter(botProps, true, this);
-        commands.loadSE(this);
+        commands.loadSE();
         http = new Http(httpClient);
 
         logIn();
@@ -222,8 +223,12 @@ public class SEChat implements Chat {
             try {
                 while (!killed) {
                     for (int x = newMessages.size() - 1; x >= 0; x--) {
-                        Message m = newMessages.get(x);
 
+                        Message m = newMessages.get(x);
+                        if(!checkedUsers.contains(Long.parseLong(Integer.toString(m.userid)))){
+                            checkedUsers.add(Long.parseLong(Integer.toString(m.userid)));
+                            commands.hookupToRanks(m.userid, m.username);
+                        }
                         if(m.userid == site.getConfig().getUserID())
                             continue;
                         if(Utils.isBanned(m.userid, config)){

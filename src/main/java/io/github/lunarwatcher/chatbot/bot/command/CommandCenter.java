@@ -3,6 +3,7 @@ package io.github.lunarwatcher.chatbot.bot.command;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.lunarwatcher.chatbot.Constants;
 import io.github.lunarwatcher.chatbot.Database;
 import io.github.lunarwatcher.chatbot.MapUtils;
 import io.github.lunarwatcher.chatbot.bot.chat.BMessage;
@@ -45,8 +46,7 @@ public class CommandCenter {
         addCommand(new AboutCommand());
         addCommand(new Learn(tc, this));
         addCommand(new UnLearn(tc, this));
-        addCommand(new AddAdmin(site));
-        addCommand(new RemoveAdmin(site));
+        addCommand(new UpdateRank(site));
         addCommand(new CheckCommand(site));
         addCommand(new BanUser(site));
         addCommand(new Unban(site));
@@ -56,20 +56,26 @@ public class CommandCenter {
         addCommand(new ChangeCommandStatus(this));
         addCommand(new RandomNumber());
         addCommand(new LMGTFY());
+        addCommand(new UpdateRank(site));
+        addCommand(new DebugRanks(site));
         //listeners = new ArrayList<>();
     }
 
-    public void loadSE(SEChat chat) {
-        addCommand(new Summon(RELOCATION_VOTES, chat));
-        addCommand(new UnSummon(RELOCATION_VOTES, chat));
-        addCommand(new AddHome(chat));
-        addCommand(new RemoveHome(chat));
+    public void loadSE() {
+        if(site instanceof SEChat){
+            addCommand(new Summon(RELOCATION_VOTES, (SEChat) site));
+            addCommand(new UnSummon(RELOCATION_VOTES, (SEChat) site));
+            addCommand(new AddHome((SEChat) site));
+            addCommand(new RemoveHome((SEChat) site));
+        }
     }
 
-    public void loadDiscord(DiscordChat chat) {
-        addCommand(new DiscordChat.Match());
-        addCommand(new NSFWState(chat));
+    public void loadDiscord() {
 
+        addCommand(new DiscordChat.Match());
+        if(site instanceof DiscordChat) {
+            addCommand(new NSFWState((DiscordChat) site));
+        }
     }
 
     /**
@@ -173,4 +179,19 @@ public class CommandCenter {
         return (Command) MapUtils.Companion.get(key, commands);
     }
 
+    public void hookupToRanks(long user, String username){
+        if(site.getConfig().getRank(user) == null){
+            //This code exists in an attempt to map every. Single. User. who uses the bot or even talk around it
+            //This will build up a fairly big database, but that's why there is (going to be) a purge method
+            //for the database
+            site.getConfig().addRank(user, Constants.DEFAULT_RANK, username);
+        }else{
+            //Wrong inspection from Java here. There will not be any NPE's as the rank retrieved can't be null if it does into this
+            //statement
+            if(site.getConfig().getRank(user).getUsername() == null
+                    || !site.getConfig().getRank(user).getUsername().equals(username)){
+                site.getConfig().addRank(user, site.getConfig().getRank(user).getRank(), username);
+            }
+        }
+    }
 }
