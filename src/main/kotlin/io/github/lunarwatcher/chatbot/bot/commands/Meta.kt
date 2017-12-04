@@ -8,6 +8,7 @@ import io.github.lunarwatcher.chatbot.bot.sites.se.SEChat
 import io.github.lunarwatcher.chatbot.utils.Utils
 import sun.java2d.pipe.AAShapePipe
 
+@Suppress("NAME_SHADOWING")
 //TODO make this better kotlin
 class BotConfig{
     val site: Chat;
@@ -50,6 +51,14 @@ class BotConfig{
     }
 
     fun addRank(user: Long, rank: Int, username: String?){
+        var username = username
+
+        if(username == null){
+            val rank = ranks.get(user);
+            if(rank?.username != null){
+                username = rank.username;
+            }
+        }
         ranks.put(user, RankInfo(user, rank, username));
     }
 

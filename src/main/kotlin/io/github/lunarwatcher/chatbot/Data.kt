@@ -29,7 +29,8 @@ class MapUtils{
             //firstOrNull isn't the first element in the list, it's the first available element with
             //a given key, or null if not found
             return map.entries
-                    .firstOrNull { it.key == key }
+                    .firstOrNull {
+                            it.key == key }
                     ?.value
         }
     }

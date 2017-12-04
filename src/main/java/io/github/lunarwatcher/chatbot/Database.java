@@ -124,6 +124,10 @@ public class Database {
     public void put(String key, Object value) {
         cache.put(key, value);
         changed = true;
+
+        if(Constants.AUTO_SAVE_WHEN_PUT){
+            commit();
+        }
     }
 
     /**

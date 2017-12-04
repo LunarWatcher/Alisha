@@ -232,46 +232,51 @@ public class SEChat implements Chat {
                         if(m.userid == site.getConfig().getUserID())
                             continue;
                         if(Utils.isBanned(m.userid, config)){
-                            boolean mf = false;
+                            if(CommandCenter.isCommand(m.content)) {
+                                boolean mf = false;
 
-                            for(Integer u : notifiedBanned){
-                                if(u == m.userid){
-                                    mf = true;
-                                    break;
+                                for (Integer u : notifiedBanned) {
+                                    if (u == m.userid) {
+                                        mf = true;
+                                        break;
+                                    }
+                                }
+
+                                if (!mf) {
+                                    notifiedBanned.add(m.userid);
+                                    SERoom s = getRoom(m.roomID);
+                                    if (s != null) {
+                                        s.reply("You're banned from interracting with me", m.messageID);
+                                    }
                                 }
                             }
-
-                            if(!mf){
-                                notifiedBanned.add(m.userid);
-                                SERoom s = getRoom(m.roomID);
-                                if(s != null){
-                                    s.reply("You're banned from interracting with me", m.messageID);
-                                }
-                            }
+                            continue;
                         }
-                        if (CommandCenter.isCommand(m.content)) {
-                            User user = new User(getName(), m.userid, m.username, m.roomID, false);
-                            List<BMessage> replies = commands.parseMessage(m.content, user, false);
-                            if(replies != null && getRoom(m.roomID) != null){
-                                for(BMessage bm : replies){
-                                    if(bm.content.length() >= 500 && !bm.content.contains("\n")){
-                                        bm.content += "\n.";
-                                    }
-                                    if(bm.replyIfPossible){
-                                        getRoom(m.roomID).reply(bm.content, m.messageID);
-                                    }else{
-                                        getRoom(m.roomID).sendMessage(bm.content);
-                                    }
+
+                        User user = new User(getName(), m.userid, m.username, m.roomID, false);
+                        List<BMessage> replies = commands.parseMessage(m.content, user, false);
+                        if(replies != null && getRoom(m.roomID) != null){
+                            for(BMessage bm : replies){
+                                if(bm.content.length() >= 500 && !bm.content.contains("\n")){
+                                    bm.content += "\n.";
                                 }
-                            }else{
-                                SERoom r = getRoom(m.roomID);
-                                if(r != null){
-                                    r.reply("Maybe you should consider looking up the manual", m.messageID);
+                                if(bm.replyIfPossible){
+                                    getRoom(m.roomID).reply(bm.content, m.messageID);
                                 }else{
+                                    getRoom(m.roomID).sendMessage(bm.content);
+                                }
+                            }
+                        }else{
+                            if(CommandCenter.isCommand(m.content)) {
+                                SERoom r = getRoom(m.roomID);
+                                if (r != null) {
+                                    r.reply("Maybe you should consider looking up the manual", m.messageID);
+                                } else {
                                     System.err.println("Room is null!");
                                 }
                             }
                         }
+
                     }
 
                     newMessages.clear();

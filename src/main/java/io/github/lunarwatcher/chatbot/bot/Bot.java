@@ -31,6 +31,7 @@ public class Bot {
         this.database = db;
         this.botProps = botProps;
         this.sites = sites;
+        CommandCenter.bot = this;
     }
 
     public void initialize() throws IOException {
@@ -38,13 +39,11 @@ public class Bot {
             if(site.getName().equals("discord")) {
                 chats.add(new DiscordChat(site, botProps, database));
             }else {
-
                 CloseableHttpClient httpClient = HttpClients.createDefault();
                 ClientManager websocketClient = ClientManager.createClient(JdkClientContainer.class.getName());
                 websocketClient.setDefaultMaxSessionIdleTimeout(0);
                 websocketClient.getProperties().put(ClientProperties.RETRY_AFTER_SERVICE_UNAVAILABLE, true);
                 chats.add(new SEChat(site, httpClient, websocketClient, botProps, database));
-
             }
         }
 

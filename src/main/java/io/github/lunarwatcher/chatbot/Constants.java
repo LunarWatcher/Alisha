@@ -19,6 +19,8 @@ public final class Constants {
     public static final String LEARNED_COMMANDS = "learned";
     public static final boolean DEFAULT_NSFW = true;
     public static final int DEFAULT_RANK = 1;
+    public static final String WAVE_REGEX = "(^|\\s)(o/|\\\\o)(\\s|$)";
+    public static final boolean AUTO_SAVE_WHEN_PUT = true;
 
     public static final String[] joinMessages = {
             "As you command, I'll leave for that room as soon as possible",

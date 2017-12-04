@@ -1,6 +1,7 @@
 package io.github.lunarwatcher.chatbot.bot.commands
 
 import io.github.lunarwatcher.chatbot.Constants
+import io.github.lunarwatcher.chatbot.bot.Bot
 import io.github.lunarwatcher.chatbot.bot.ReplyBuilder
 import io.github.lunarwatcher.chatbot.bot.chat.BMessage
 import io.github.lunarwatcher.chatbot.bot.command.CommandCenter
@@ -89,14 +90,26 @@ class UpdateRank(val site: Chat) : AbstractCommand("promote", listOf("demote"), 
         val split = input.split(" ")
         if(split.size < 3)
             return BMessage("Missing parameters. Found " + split.size + ", expected 3", true);
-        val updatingUser: Long
+        var updatingUser: Long
         val newRank: Int
-        try {
-            updatingUser = split[1].toLong();
-            newRank = split[2].toInt();
+        updatingUser = try {
+            split[1].toLong();
 
         }catch(e: ClassCastException){
             return BMessage("You have to supply a valid user ID and new rank", true);
+        }catch(e: NumberFormatException){
+            val usr = site.config.ranks.entries.firstOrNull{it.value.username == split[1]}
+            usr?.value?.uid ?: return BMessage("You have to supply a valid user ID/indexed username", true);
+
+        }
+        try {
+
+            newRank = split[2].toInt();
+
+        }catch(e: ClassCastException){
+            return BMessage("You have to supply a valid new rank", true);
+        }catch(e: NumberFormatException){
+            return BMessage("You have to supply a valid new rank", true);
         }
         if(newRank < 0 || newRank > 10)
             return BMessage("That's not a valid rank within the range [0, 10]", true);
@@ -105,15 +118,18 @@ class UpdateRank(val site: Chat) : AbstractCommand("promote", listOf("demote"), 
 
         val cuRank = Utils.getRank(user.userID, site.config)
 
-        if(currentRank >= cuRank)
+        if(currentRank >= cuRank && !Utils.isHardcodedAdmin(user.userID, site))
             return BMessage("You can't change the rank of users with the same or higher rank as yourself", true);
 
-        if(newRank >= cuRank)
+        if(newRank >= cuRank && cuRank != 10)
             return BMessage("You can't promote other users to the same or higher rank as yourself", true)
 
         if((newRank == 0 || currentRank == 0) && cuRank < 8){
             return BMessage("You can't ban or unban users with your current rank", true);
         }
+
+        if(cuRank < 6)
+            return BMessage("You can't change ranks with your current rank", true);
 
         site.config.addRank(updatingUser, newRank, null);
         return BMessage("Rank for the user has successfully been updated", true);
@@ -214,10 +230,11 @@ class SaveCommand(val site: Chat) : AbstractCommand("save", listOf(), "Saves the
     override fun handleCommand(input: String, user: User): BMessage? {
         if(!matchesCommand(input))
             return null;
-        if(!Utils.isAdmin(user.userID, site.config))
-            return BMessage("I'm afraid I can't let you do that User", true)
+        if(Utils.getRank(user.userID, site.config) < 8)
+            return BMessage("I'm afraid I can't let you do that, User", true);
 
-        site.database.commit();
+
+        CommandCenter.bot.save();
 
         return BMessage("Saved.", true);
     }
@@ -228,18 +245,22 @@ class WhoMade(val commands: CommandCenter) : AbstractCommand("WhoMade", listOf()
         if(!matchesCommand(input))
             return null;
         try {
-            val arg = parseArguments(input) ?: return null;
+            val arg = splitCommand(input);
 
-            if(commands.isBuiltIn(arg["name"])){
+            println(arg)
+            if(arg.size < 2)
+                return BMessage("Missing arguments!", true);
+
+            if(commands.isBuiltIn(arg["content"])){
                 return BMessage("It's a built-in command, meaning it was made by the project developer(s)", true);
             }
 
-            if(CommandCenter.tc.doesCommandExist(arg["name"] ?: return null)){
+            if(CommandCenter.tc.doesCommandExist(arg["content"] ?: return null)){
                 CommandCenter.tc.commands.entries
                         .forEach {
-                            if(it.value.name == arg["name"])
-                                return BMessage("The command `" + arg + "` was made by a user with the User ID "
-                                        + it.value.creator + ". The command was created on " +
+                            if(it.value.name == arg["content"])
+                                return BMessage("The command `" + arg["content"] + "` was made by a user with the User ID "
+                                        + grabLink(it.value.creator, it.value.site) + ". The command was created on " +
                                         (if(it.value.site == "Unknown") "an unknown site"
                                         else it.value.site) + ".", true)
                         }
@@ -250,16 +271,24 @@ class WhoMade(val commands: CommandCenter) : AbstractCommand("WhoMade", listOf()
 
         return BMessage("That command doesn't appear to exist.", true);
     }
-}
 
-//Committing and pushing...
+    fun grabLink(id: Long, site: String): String{
+        return when(site){
+            "discord" -> "<@$id>"
+            "stackexchange" -> "[$id](https://stackexchange.com/users/$id)"
+            "stackoverflow" -> "[$id](https://stackoverflow.com/users/$id)"
+            "metastackexchange" -> "[$id](https://meta.stackexchange.com/users/$id)"
+            else -> id.toString()
+        }
+    }
+}
 
 class DebugRanks(val site: Chat) : AbstractCommand("rankdebug", listOf(), "Debugs ranks"){
     override fun handleCommand(input: String, user: User): BMessage? {
         if(!matchesCommand(input))
             return null;
 
-        if(Utils.getRank(user.userID, site.config) < 10)
+        if(Utils.getRank(user.userID, site.config) < 8)
             return BMessage("You can't do that", true);
 
         val reply: ReplyBuilder = ReplyBuilder(site.name == "discord")

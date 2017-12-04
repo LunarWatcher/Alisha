@@ -29,14 +29,14 @@ public class CmdInfo{
         if(other instanceof CmdInfo) {
             for (int i = 0; i < names.size(); i++) {
                 for (int j = 0; j < ((CmdInfo) other).names.size(); j++) {
-                    if (((CmdInfo) other).names.get(j).equals(names.get(i))) {
+                    if (((CmdInfo) other).names.get(j).toLowerCase().equals(names.get(i).toLowerCase())) {
                         return true;
                     }
                 }
             }
         }else{
             for (String name : names) {
-                if (name.equals(other))
+                if (name.toLowerCase().equals(((String)other).toLowerCase()))
                     return true;
             }
         }

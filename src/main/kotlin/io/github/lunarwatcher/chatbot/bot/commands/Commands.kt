@@ -58,10 +58,10 @@ abstract class AbstractCommand(override val name: String, override val aliases: 
         val name = initialSplit.split(" ")[0];
         if(name == input){
             //No arguments, just the name
-            return mapOf("name" to name)
+            return mapOf("name" to name.trim())
         }
         val content = initialSplit.substring(name.length + 1/*avoid the space*/)
-        val dMap = mutableMapOf("name" to name, "content" to content)
+        val dMap = mutableMapOf("name" to name.trim(), "content" to content.trim())
 
         if(initialSplit == input){
             return dMap
@@ -72,7 +72,7 @@ abstract class AbstractCommand(override val name: String, override val aliases: 
             return dMap;
 
         for(e in iMap)
-            dMap.put(e.key, e.value)
+            dMap.put(e.key.trim(), e.value.trim())
 
 
         return dMap;

@@ -28,10 +28,14 @@ class CheckCommand(var site: Chat) : AbstractCommand("check", listOf(), "Checks 
             split["content"]?.toLong()
         }catch(e: ClassCastException){
             return BMessage("Please specify a valid user ID", true);
+        }catch(e: NumberFormatException){
+            return BMessage("Please specify a valid user ID", true);
         }
         val usr = split["content"]?.toLong() ?: return null
         val rank: Int = Utils.getRank(usr, site.config)
-        return BMessage("The user $usr's rank is $rank", true)
+        val username: String? = site.config.ranks[usr]?.username
+
+        return BMessage("The user " + (username ?: usr) + "'s rank is $rank", true)
     }
 
 }

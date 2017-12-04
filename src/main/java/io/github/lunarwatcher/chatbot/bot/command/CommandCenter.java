@@ -6,9 +6,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.lunarwatcher.chatbot.Constants;
 import io.github.lunarwatcher.chatbot.Database;
 import io.github.lunarwatcher.chatbot.MapUtils;
+import io.github.lunarwatcher.chatbot.bot.Bot;
 import io.github.lunarwatcher.chatbot.bot.chat.BMessage;
 import io.github.lunarwatcher.chatbot.bot.chat.Message;
 import io.github.lunarwatcher.chatbot.bot.commands.*;
+import io.github.lunarwatcher.chatbot.bot.listener.Listener;
+import io.github.lunarwatcher.chatbot.bot.listener.WaveListener;
 import io.github.lunarwatcher.chatbot.bot.sites.Chat;
 import io.github.lunarwatcher.chatbot.bot.sites.discord.DiscordChat;
 import io.github.lunarwatcher.chatbot.bot.sites.se.SEChat;
@@ -28,9 +31,11 @@ public class CommandCenter {
 
     @Getter
     public Map<CmdInfo, Command> commands;
+    public List<Listener> listeners;
     //List<Listener> listeners;
     public Chat site;
     public static TaughtCommands tc;
+    public static Bot bot;
     public Database db;
 
     public CommandCenter(Properties botProps, boolean shrugAlt, Chat site) {
@@ -58,7 +63,9 @@ public class CommandCenter {
         addCommand(new LMGTFY());
         addCommand(new UpdateRank(site));
         addCommand(new DebugRanks(site));
-        //listeners = new ArrayList<>();
+
+        listeners = new ArrayList<>();
+        listeners.add(new WaveListener());
     }
 
     public void loadSE() {
@@ -100,35 +107,44 @@ public class CommandCenter {
     public List<BMessage> parseMessage(String message, User user, boolean nsfw) throws IOException {
         if (message == null)
             return null;
-
-        if (!isCommand(message))
-            return null;
-
-
-        message = message.substring(TRIGGER.length());
-
+        String om = message;
         List<BMessage> replies = new ArrayList<>();
-        String name = message.split(" ")[0];
+        if(isCommand(message)) {
+            message = message.substring(TRIGGER.length());
 
-        Command c = get(name);
-        if (c != null) {
-            BMessage x = c.handleCommand(message, user);
-            if (x != null) {
-                //There are still some commands that could return null here
-                replies.add(x);
+            //Get rid of white space to avoid problems down the line
+            message = message.trim();
+
+
+            String name = message.split(" ")[0];
+
+            Command c = get(name);
+            if (c != null) {
+                BMessage x = c.handleCommand(message, user);
+                if (x != null) {
+                    //There are still some commands that could return null here
+                    replies.add(x);
+                }
+            }
+
+            LearnedCommand lc = tc.get(name);
+            if (lc != null) {
+                //If the command is NSFW but the site doesn't allow it, don't handle the command
+                if (lc.getNsfw() && !nsfw)
+                    System.out.println("command ignored");
+                else {
+
+                    BMessage x = lc.handleCommand(message, user);
+                    if (x != null)
+                        replies.add(x);
+                }
             }
         }
 
-        LearnedCommand lc = tc.get(name);
-        if(lc != null){
-            //If the command is NSFW but the site doesn't allow it, don't handle the command
-            if(lc.getNsfw() && !nsfw)
-                System.out.println("command ignored");
-            else {
-
-                BMessage x = lc.handleCommand(message, user);
-                if (x != null)
-                    replies.add(x);
+        for(Listener l : listeners){
+            BMessage x = l.handleInput(om, user);
+            if(x != null){
+                replies.add(x);
             }
         }
 
@@ -157,6 +173,8 @@ public class CommandCenter {
     }
 
     public boolean isBuiltIn(String cmdName){
+        if(cmdName == null)
+            return false;
         return get(cmdName) != null;
     }
 
