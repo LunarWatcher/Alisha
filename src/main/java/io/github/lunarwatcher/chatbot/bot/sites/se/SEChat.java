@@ -216,7 +216,7 @@ public class SEChat implements Chat {
     public String getName(){
         return site.getName();
     }
-
+    long attempts = 0;
     private class SEThread extends Thread {
         int retries;
         public void run() {
@@ -225,6 +225,7 @@ public class SEChat implements Chat {
                     for (int x = newMessages.size() - 1; x >= 0; x--) {
 
                         Message m = newMessages.get(x);
+                        newMessages.remove(x);
                         if(!checkedUsers.contains(Long.parseLong(Integer.toString(m.userid)))){
                             checkedUsers.add(Long.parseLong(Integer.toString(m.userid)));
                             commands.hookupToRanks(m.userid, m.username);
@@ -308,16 +309,56 @@ public class SEChat implements Chat {
                 }
 
 
-            }catch(IOException e){
-                if(retries < 10) {
-                    run();
-                    retries++;
-                }else{
-                    System.err.println("Fatal error: ");
-                    e.printStackTrace();
+            }catch(Exception e){
+                e.printStackTrace();
+
+                new RetryThread().start();
+                try{
+                   join();
+                }catch(InterruptedException ex){
+                    //Ignore
                 }
             }
         }
+    }
+
+    public class RetryThread extends Thread{
+        boolean connected = false;
+        public void run(){
+            attempts++;
+            try{
+                Thread.sleep(15000 * attempts);
+            }catch(InterruptedException e){
+
+            }
+
+            List<Integer> rooms = new ArrayList<>();
+            for(SERoom s : SEChat.this.getRooms()){
+                rooms.add(s.getId());
+            }
+            SEChat.this.rooms.clear();
+
+            for(Integer x : rooms) {
+                try {
+                    SEChat.this.addRoom(new SERoom(x, SEChat.this));
+                } catch (RoomNotFoundException e) {
+                    //Ignore
+                }catch(IOException e){
+                    //IOExceptions are fine. Just continue to the next element in the loop
+                    continue;
+                }catch(Exception e){
+                    //Shit went to hell,
+                    return;
+                }
+            }
+            new SEThread().start();
+            try {
+                join();
+            }catch(Exception e){
+                //IGNORE
+            }
+        }
+
     }
 
     public SERoom getRoom(int id){

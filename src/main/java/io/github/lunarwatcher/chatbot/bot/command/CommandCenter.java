@@ -107,6 +107,8 @@ public class CommandCenter {
     public List<BMessage> parseMessage(String message, User user, boolean nsfw) throws IOException {
         if (message == null)
             return null;
+        message = message.replace("&#8238;", "");
+        message = message.replace("\u202E", "");
         String om = message;
         List<BMessage> replies = new ArrayList<>();
         if(isCommand(message)) {

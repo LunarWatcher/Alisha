@@ -9,9 +9,7 @@ class Summon(val votes: Int, val chat: SEChat) : AbstractCommand("summon", listO
     var vts: MutableMap<Int, MutableList<Long>> = mutableMapOf();
 
     override fun handleCommand(input: String, user: User): BMessage? {
-
         if(!matchesCommand(input)){
-
             return null;
         }
         var votes = this.votes;
@@ -24,11 +22,8 @@ class Summon(val votes: Int, val chat: SEChat) : AbstractCommand("summon", listO
             var iRoom: Int = raw.toInt();
 
 
-            for(room in chat.getRooms()){
-                if(room.id == iRoom){
-                    return BMessage("I'm already in that room", true);
-                }
-            }
+            chat.rooms.filter { it.id == iRoom }
+                    .forEach { return BMessage("I'm already in that room", true) }
 
             var users: MutableList<Long>? = vts.get(iRoom);
 
