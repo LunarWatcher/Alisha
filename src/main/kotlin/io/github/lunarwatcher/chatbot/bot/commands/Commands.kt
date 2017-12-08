@@ -139,6 +139,7 @@ class HelpCommand(var center: CommandCenter) : AbstractCommand("help", listOf(),
                     .nl().fixedInput().nl();
             val commands: MutableMap<String, String> = mutableMapOf()
             val learnedCommands: MutableMap<String, String> = mutableMapOf()
+            val listeners: MutableMap<String, String> = mutableMapOf();
 
             val names: MutableList<String> = mutableListOf()
 
@@ -155,8 +156,15 @@ class HelpCommand(var center: CommandCenter) : AbstractCommand("help", listOf(),
                 }
             }
 
+            if(!center.listeners.isEmpty()){
+                for(listener in center.listeners){
+                    listeners.put(listener.name, listener.description);
+                }
+            }
+
             names.addAll(commands.keys);
             names.addAll(learnedCommands.keys)
+            names.addAll(listeners.keys);
 
             val maxLen = getMaxLen(names);
 
@@ -184,6 +192,16 @@ class HelpCommand(var center: CommandCenter) : AbstractCommand("help", listOf(),
                     if (command.nsfw)
                         reply.append(" - NSFW");
                     reply.nl();
+                }
+            }
+
+            if(!listeners.isEmpty()){
+                reply.fixedInput().append("==================== Listeners").newLine()
+
+                for(listener in listeners){
+                    reply.fixedInput().append(listener.key);
+                    reply.append(repeat(" ", maxLen - listener.key.length + 2) + "| ")
+                            .append(listener.value).nl();
                 }
             }
             return BMessage(reply.toString(), false);

@@ -105,7 +105,6 @@ public class SERoom implements Closeable {
             if(actualObj == null)
                 return;
 
-            boolean eight = false;
             for(JsonNode event : actualObj){
                 JsonNode et = event.get("event_type");
                 if(et == null)
@@ -118,16 +117,7 @@ public class SERoom implements Closeable {
                     String content = event.get("content").toString();
                     content = removeQuotation(content);
                     content = correctBackslash(content);
-                    if(eight){
-                        if(isPinged(content, parent.site.getConfig().getUsername())){
-                            //The bot has already been pinged (flagged by event ID 8)
-                            //So ignore this message and move on, it's already been handled
-                            //Disable the flag again to avoid a bug if multiple events come in at
-                            //once AND there are two eights
-                            eight = false;
-                            continue;
-                        }
-                    }
+
                     //New message or edited message
 
                     long messageID = event.get("message_id").asLong();
@@ -155,21 +145,6 @@ public class SERoom implements Closeable {
                     StarMessage message = new StarMessage(messageID, id, stars);
                     parent.starredMessages.add(message);
                     return;
-                }else if(eventCode == 8){
-                    eight = true;
-
-                    String content = event.get("content").toString();
-                    content = removeQuotation(content);
-                    content = correctBackslash(content);
-                    long messageID = event.get("message_id").asLong();
-                    int userid = event.get("user_id").asInt();
-                    String username = event.get("user_name").toString();
-
-
-                    username = removeQuotation(username);
-                    Message message = new Message(content, messageID, id, username, userid);
-                    parent.pingMessages.add(message);
-                    return;
                 }else if(eventCode == 10){
                     //The message was deleted. Ignore it
                     return;
@@ -192,12 +167,15 @@ public class SERoom implements Closeable {
                 //6: star
                 //7:
                 //8: ping - if called, ensure that the content does not contain a ping to the bot name if 1 is called
+                //        - WARNING: Using event 8 will trigger in every single active room. Use at your own risk
                 //9:
                 //10: deleted
                 //15: kicked
                 //17: Invite
 
                 //19: Moved
+
+                //34: Username/profile picture changed
             }
 
         }catch(IOException e){
@@ -259,7 +237,7 @@ public class SERoom implements Closeable {
 
     public boolean isPinged(String message, String username){
         for(int i = 3; i < username.length(); i++){
-            if(message.contains("@" + username.substring(0, i))){
+            if(message.toLowerCase().contains(("@" + username.substring(0, i)).toLowerCase())){
                 return true;
             }
         }

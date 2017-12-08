@@ -10,8 +10,7 @@ import io.github.lunarwatcher.chatbot.bot.Bot;
 import io.github.lunarwatcher.chatbot.bot.chat.BMessage;
 import io.github.lunarwatcher.chatbot.bot.chat.Message;
 import io.github.lunarwatcher.chatbot.bot.commands.*;
-import io.github.lunarwatcher.chatbot.bot.listener.Listener;
-import io.github.lunarwatcher.chatbot.bot.listener.WaveListener;
+import io.github.lunarwatcher.chatbot.bot.listener.*;
 import io.github.lunarwatcher.chatbot.bot.sites.Chat;
 import io.github.lunarwatcher.chatbot.bot.sites.discord.DiscordChat;
 import io.github.lunarwatcher.chatbot.bot.sites.se.SEChat;
@@ -66,6 +65,11 @@ public class CommandCenter {
 
         listeners = new ArrayList<>();
         listeners.add(new WaveListener());
+        MentionListener ml = new MentionListener(site);
+        listeners.add(new KnockKnock(ml));
+        listeners.add(new Train(5));
+        listeners.add(ml);
+
     }
 
     public void loadSE() {
@@ -103,6 +107,28 @@ public class CommandCenter {
     public void loadNSFW() {
 
     }
+
+    public List<BMessage> parseListener(String message, User user, boolean nsfw) throws IOException{
+        if (message == null)
+            return null;
+        message = message.replace("&#8238;", "");
+        message = message.replace("\u202E", "");
+        String om = message;
+        List<BMessage> replies = new ArrayList<>();
+
+        for(Listener l : listeners){
+            BMessage x = l.handleInput(om, user);
+            if(x != null){
+                replies.add(x);
+            }
+        }
+
+        if(replies.size() == 0)
+            replies = null;
+
+        return replies;
+    }
+
 
     public List<BMessage> parseMessage(String message, User user, boolean nsfw) throws IOException {
         if (message == null)

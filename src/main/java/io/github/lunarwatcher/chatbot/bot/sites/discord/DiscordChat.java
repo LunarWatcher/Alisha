@@ -122,130 +122,133 @@ public class DiscordChat implements Chat{
 
     @EventSubscriber
     public void onMessageReceived(MessageReceivedEvent event){
-        if(!checkedUsers.contains(event.getAuthor().getLongID())){
-            checkedUsers.add(event.getAuthor().getLongID());
-            commands.hookupToRanks(event.getAuthor().getLongID(), event.getAuthor().getName());
-        }
-        String msg = event.getMessage().getContent();
+        try {
+            if (!checkedUsers.contains(event.getAuthor().getLongID())) {
+                checkedUsers.add(event.getAuthor().getLongID());
+                commands.hookupToRanks(event.getAuthor().getLongID(), event.getAuthor().getName());
+            }
+            String msg = event.getMessage().getContent();
 
-        if(Utils.isBanned(event.getAuthor().getLongID(), config)){
-            if(CommandCenter.isCommand(msg)) {
-                boolean mf = false;
+            if (Utils.isBanned(event.getAuthor().getLongID(), config)) {
+                if (CommandCenter.isCommand(msg)) {
+                    boolean mf = false;
 
-                for (Long u : notifiedBanned) {
-                    if (u == event.getAuthor().getLongID()) {
-                        mf = true;
+                    for (Long u : notifiedBanned) {
+                        if (u == event.getAuthor().getLongID()) {
+                            mf = true;
+                            break;
+                        }
+                    }
+
+                    if (!mf) {
+                        notifiedBanned.add(event.getAuthor().getLongID());
+                        event.getChannel().sendMessage("You're banned from interacting with me <@" + event.getAuthor().getLongID() + ">");
+                    }
+                }
+                return;
+            }
+            if (msg.startsWith(TRIGGER + "stats")) {
+                String cmd = msg.replace(TRIGGER + "stats ", "");
+                RMatch match = null;
+
+                for (RMatch m : regex) {
+                    if (m.usern.toLowerCase().equals(cmd.toLowerCase())) {
+                        match = m;
                         break;
                     }
                 }
 
-                if (!mf) {
-                    notifiedBanned.add(event.getAuthor().getLongID());
-                    event.getChannel().sendMessage("You're banned from interacting with me <@" + event.getAuthor().getLongID() + ">");
-                }
-            }
-            return;
-        }
-        if(msg.startsWith(TRIGGER + "stats")){
-            String cmd = msg.replace(TRIGGER + "stats ", "");
-            RMatch match = null;
-
-            for(RMatch m : regex){
-                if(m.usern.toLowerCase().equals(cmd.toLowerCase())){
-                    match = m;
-                    break;
-                }
-            }
-
-            if(match != null){
-                event.getChannel().sendMessage(match.message());
-            }else{
-                event.getChannel().sendMessage("User not listed. Yet :smirk:");
-            }
-        }else {
-            try {
-                IChannel channel = null;
-
-                for(IChannel chnl : channels){
-                    if(chnl.getLongID() == event.getChannel().getLongID()){
-                        channel = chnl;
-                        break;
-                    }
-                }
-
-                if(channel == null){
-                    channels.add(event.getChannel());
-                }
-
-                int index = 0;
-                for(int i = 0; i < channels.size(); i++){
-                    if(channels.get(i).getLongID() == event.getChannel().getLongID()){
-                        index = i;
-                        break;
-                    }
-                }
-
-                User user = new User(site.getName(), event.getAuthor().getLongID(), event.getAuthor().getName(), index, getNsfw(event.getGuild().getLongID()));
-
-                List<BMessage> replies = commands.parseMessage(msg, user, getNsfw(event.getGuild().getLongID()));
-                if(replies == null) {
-                    if (CommandCenter.isCommand(msg)) {
-                        event.getChannel().sendMessage("Look up the manual maybe?");
-                    }
+                if (match != null) {
+                    event.getChannel().sendMessage(match.message());
                 } else {
-                    for (BMessage r : replies) {
-                        List<String> items = new ArrayList<>();
-                        if (r.content.length() > 2000) {
-                            int i = 0;
-                            int total = r.content.length();
-                            while (i < total) {
-                                int remaining = total - i;
-                                int sub = 0;
-                                if (remaining >= 2000) {
-                                    sub = 2000;
-                                } else {
-                                    sub = remaining;
-                                }
-                                items.add(r.content.substring(i, i + sub));
-                                i += sub;
-                            }
-
-                            for (int x = 0; x < (items.size() > 5 ? 5 : items.size()); x++) {
-                                event.getChannel().sendMessage(items.get(x));
-                                try {
-                                    Thread.sleep(100);
-                                } catch (InterruptedException e) {
-
-                                }
-                            }
-
-                        } else
-                            event.getChannel().sendMessage(r.content);
-                    }
+                    event.getChannel().sendMessage("User not listed. Yet :smirk:");
                 }
+            } else {
+                try {
+                    IChannel channel = null;
 
-            } catch (IOException e) {
-                e.printStackTrace();
+                    for (IChannel chnl : channels) {
+                        if (chnl.getLongID() == event.getChannel().getLongID()) {
+                            channel = chnl;
+                            break;
+                        }
+                    }
+
+                    if (channel == null) {
+                        channels.add(event.getChannel());
+                    }
+
+                    int index = 0;
+                    for (int i = 0; i < channels.size(); i++) {
+                        if (channels.get(i).getLongID() == event.getChannel().getLongID()) {
+                            index = i;
+                            break;
+                        }
+                    }
+
+                    User user = new User(site.getName(), event.getAuthor().getLongID(), event.getAuthor().getName(), index, getNsfw(event.getGuild().getLongID()));
+
+                    List<BMessage> replies = commands.parseMessage(msg, user, getNsfw(event.getGuild().getLongID()));
+                    if (replies == null) {
+                        if (CommandCenter.isCommand(msg)) {
+                            event.getChannel().sendMessage("Look up the manual maybe?");
+                        }
+                    } else {
+                        for (BMessage r : replies) {
+                            List<String> items = new ArrayList<>();
+                            if (r.content.length() > 2000) {
+                                int i = 0;
+                                int total = r.content.length();
+                                while (i < total) {
+                                    int remaining = total - i;
+                                    int sub = 0;
+                                    if (remaining >= 2000) {
+                                        sub = 2000;
+                                    } else {
+                                        sub = remaining;
+                                    }
+                                    items.add(r.content.substring(i, i + sub));
+                                    i += sub;
+                                }
+
+                                for (int x = 0; x < (items.size() > 5 ? 5 : items.size()); x++) {
+                                    event.getChannel().sendMessage(items.get(x));
+                                    try {
+                                        Thread.sleep(100);
+                                    } catch (InterruptedException e) {
+
+                                    }
+                                }
+
+                            } else
+                                event.getChannel().sendMessage(r.content);
+                        }
+                    }
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
-        }
-        long uid = event.getAuthor().getLongID();
-        String uname = event.getAuthor().getName();
-        RMatch u = null;
+            long uid = event.getAuthor().getLongID();
+            String uname = event.getAuthor().getName();
+            RMatch u = null;
 
-        for(RMatch m : regex){
-            if(m.userid == uid){
-                u = m;
+            for (RMatch m : regex) {
+                if (m.userid == uid) {
+                    u = m;
+                }
             }
+
+            if (u == null) {
+                u = new RMatch(uid, uname);
+                regex.add(u);
+            }
+
+            u.match(event.getMessage().getContent());
+
+        }catch(Exception e){
+            e.printStackTrace();
         }
-
-        if(u == null){
-            u = new RMatch(uid, uname);
-            regex.add(u);
-        }
-
-        u.match(event.getMessage().getContent());
-
-
     }
 
     @Override
@@ -275,6 +278,7 @@ public class DiscordChat implements Chat{
             occurences.put("(ha+(ha+)+)", 0L);
             occurences.put(":sloth:", 0L);
             occurences.put(":thinking:", 0L);
+            occurences.put("zoe", 0L);
 
             if(regMatch.size() == 0){
                 for(Map.Entry<String, Long> occurence : occurences.entrySet()){

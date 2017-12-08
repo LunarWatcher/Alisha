@@ -51,7 +51,6 @@ public class SEChat implements Chat {
     public List<Message> newMessages = new ArrayList<>();
     public List<SERoom.StarMessage> starredMessages = new ArrayList<>();
     public List<SERoom.UserAction> actions = new ArrayList<>();
-    public List<Message> pingMessages = new ArrayList<>();
     List<Integer> notifiedBanned = new ArrayList<>();
 
     private List<Integer> roomsToleave = new ArrayList<>();
@@ -218,7 +217,7 @@ public class SEChat implements Chat {
     }
     long attempts = 0;
     private class SEThread extends Thread {
-        int retries;
+
         public void run() {
             try {
                 while (!killed) {
@@ -282,7 +281,6 @@ public class SEChat implements Chat {
 
                     newMessages.clear();
                     starredMessages.clear();
-
                     if(roomsToleave.size() != 0){
                         for(int r = roomsToleave.size() - 1; r >= 0; r--){
                             if(r == 0 && roomsToleave.size() == 0)
@@ -303,7 +301,7 @@ public class SEChat implements Chat {
                     try {
                         //Update once every second to avoid CPU eating
                         Thread.sleep(1000);
-                        retries--;
+                        if(attempts > 0) attempts--;
                     } catch (InterruptedException e) {
                     }
                 }
@@ -328,7 +326,7 @@ public class SEChat implements Chat {
             attempts++;
             try{
                 Thread.sleep(15000 * attempts);
-            }catch(InterruptedException e){
+            }catch(InterruptedException ignored){
 
             }
 

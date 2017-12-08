@@ -148,9 +148,7 @@ class Learn(val commands: TaughtCommands, val center: CommandCenter) : AbstractC
         //These are just called NSFW because I have nothing better to call them.
         //If they are manually added as SFW they will appear everywhere. Otherwise, only some sites will have access
         if(center.site.name == "discord") {
-            nsfw = !input.contains("-s");
-            if (input.contains("-s"))
-                input = input.replaceFirst("-s ", "")
+            nsfw = true
         }
         val args = splitCommand(input);
 
@@ -165,20 +163,23 @@ class Learn(val commands: TaughtCommands, val center: CommandCenter) : AbstractC
         var reply = false;
 
         for(i in 0 until args.size){
-            if(i == 0){
-                //The name is the name of the command used, not the one that's attempted learned.
-                name = args["content"]!!.split(" ", limit = 2)[0];
-            }else if(i == 1){
-
-                output = args["content"]!!.split(" ", limit = 2)[1];
-            }else if(i == 2){
-                try {
+            when (i) {
+                0 -> //The name is the name of the command used, not the one that's attempted learned.
+                    name = args["content"]!!.split(" ", limit = 2)[0]
+                1 -> output = args["content"]!!.split(" ", limit = 2)[1]
+                2 -> try {
                     reply = args["-r"]?.toBoolean() ?: return null;
                 }catch(e: ClassCastException){
                     return BMessage("The 3rd argument has to be a valid boolean!", true);
                 }
-            }else if(i == 3){
-                desc = args["-d"] ?: return null;
+                3 -> desc = args["-d"] ?: "No description supplied"
+                4 -> {
+                    nsfw = try {
+                        (args["-nsfw"] ?: (center.site.name == "discord")).toString().toBoolean()
+                    }catch(e: Exception){
+                        center.site.name == "discord";
+                    }
+                }
             }
         }
 
