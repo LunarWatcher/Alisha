@@ -5,7 +5,7 @@
 <?import com.jfoenix.controls.JFXTextArea?>
 <?import javafx.scene.layout.AnchorPane?>
 
-<AnchorPane fx:id="root" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1" fx:controller="io.github.lunarwatcher.chatbot.bot.ui.UIController">
+<AnchorPane fx:id="root" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1" >
 
     <JFXButton fx:id="start" layoutX="386.0" layoutY="269.0" mnemonicParsing="false" text="Start" />
     <JFXListView fx:id="sites" layoutX="386.0" layoutY="60.0" prefHeight="200.0" prefWidth="200.0" />

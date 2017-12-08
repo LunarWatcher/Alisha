@@ -4,6 +4,7 @@ import io.github.lunarwatcher.chatbot.bot.Bot;
 import io.github.lunarwatcher.chatbot.bot.command.CommandCenter;
 import io.github.lunarwatcher.chatbot.bot.commands.HelpCommand;
 import io.github.lunarwatcher.chatbot.bot.commands.ShrugCommand;
+import io.github.lunarwatcher.chatbot.bot.ui.UI;
 import io.github.lunarwatcher.chatbot.utils.Utils;
 
 import java.io.File;
@@ -155,11 +156,11 @@ public class BotCore {
             bot.kill();
         }));
 
-        //UI.database = jsonDB;
-        //UI.bot = bot;
-        //UI.botProps = botProps;
+        UI.database = jsonDB;
+        UI.bot = bot;
+        UI.botProps = botProps;
 //
-        //new UI(args);
+        new UI(args);
         boolean r = true;
         String in;
         while(r){

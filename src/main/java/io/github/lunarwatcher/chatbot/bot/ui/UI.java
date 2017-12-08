@@ -6,6 +6,7 @@ import io.github.lunarwatcher.chatbot.Database;
 import io.github.lunarwatcher.chatbot.bot.Bot;
 import io.github.lunarwatcher.chatbot.bot.sites.Chat;
 import javafx.application.Application;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
@@ -20,7 +21,7 @@ public class UI extends Application {
     public static Properties botProps;
     public static Database database;
     public static Bot bot;
-
+    public UIController uiController;
     public UI(){
 
     }
@@ -37,24 +38,17 @@ public class UI extends Application {
             sites.getItems().add(c.getName());
         }
 
-        AnchorPane root = new AnchorPane();
+        AnchorPane root = null;
+        uiController = new UIController();
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/main.fxml"));
 
-        JFXButton start = new JFXButton("Start");
-        JFXButton terminate = new JFXButton("Terminate");
-        JFXButton globalKill = new JFXButton("Global shutdown");
-
-        root.getChildren().add(start);
-        root.getChildren().add(terminate);
-        root.getChildren().add(globalKill);
-        root.getChildren().add(sites);
+        loader.setController(uiController);
+        root = loader.load();
 
         Scene scene = new Scene(root, 600, 600, javafx.scene.paint.Color.WHITE);
         stage.setTitle("Alisha");
         stage.setScene(scene);
         stage.setResizable(false);
         stage.show();
-
-
-
     }
 }
