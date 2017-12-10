@@ -342,10 +342,10 @@ public class SEChat implements Chat {
                 } catch (RoomNotFoundException e) {
                     //Ignore
                 }catch(IOException e){
-                    //IOExceptions are fine. Just continue to the next element in the loop
-                    continue;
+                    //Ignore these too
                 }catch(Exception e){
-                    //Shit went to hell,
+                    //Shit went to hell
+                    new RetryThread().start();
                     return;
                 }
             }

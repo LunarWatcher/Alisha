@@ -115,6 +115,7 @@ public class CommandCenter {
             return null;
         message = message.replace("&#8238;", "");
         message = message.replace("\u202E", "");
+        message = message.trim();
         String om = message;
         List<BMessage> replies = new ArrayList<>();
 
@@ -137,6 +138,8 @@ public class CommandCenter {
             return null;
         message = message.replace("&#8238;", "");
         message = message.replace("\u202E", "");
+        message = message.trim();
+        message = message.replaceAll(" +", " ");
         String om = message;
         List<BMessage> replies = new ArrayList<>();
         if(isCommand(message)) {
