@@ -161,23 +161,8 @@ public class BotCore {
         UI.botProps = botProps;
 //
         new UI(args);
-        boolean r = true;
-        String in;
-        while(r){
-            System.out.println();
-            System.out.print("Argument: ");
-            in = scanner.nextLine();
-            if(in.equals("save")){
-                bot.save();
-                System.out.println("Saved");
-            }else if(in.equals("exit")){
-                bot.save();
-                System.exit(0);
-            }else{
-                System.out.println();
-                System.out.print("Not a valid argument");
-            }
-        }
+        //the UI essentially blocks the thread. When the window is closed, the app should close too
+        //So no arguments are to be checked here
     }
 
     public static void dropPrep(){

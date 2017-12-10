@@ -54,6 +54,52 @@ public final class Constants {
             "I can't remember that one anymore"
     };
 
+    public static final String[] killMessages = {
+            "%s will no longer be a problem",
+            "*shoots %s*. **HEADSHOT!**",
+            "Unfortunately, %s killed me instead",
+            "%s has been disposed of.",
+            "%s has been crushed by a piano",
+            "A pack of wild wolves ate %s",
+            "%s committed suicide instead of `git commit`.",
+            "%s? They were trampled to death at a football match",
+            "Why did you kill %s? Who on meta is going to clean it up?",
+            "Too little MLP watching killed %s",
+            "Using Internet Explorer killed %s",
+            "%s stepped on a landmine",
+            "%s has been given a lethal injection.",
+            "%s? Their computer blew up",
+            "%s didn't watch their step and fell off a cliff",
+            "%s traveled back in time and killed themselves",
+            "https://imgs.xkcd.com/comics/dangers.png",
+            "*Sending poisoned dinner to %s...*",
+            "%s spontaneously combusted.",
+            "%s? They went into the forest and never came back",
+            "%s fell in front of a train",
+            "%s was pushed off a bridge",
+            "%s was involved in an airplane accident",
+            "Ninjas surrounded %s one day... That is all.",
+            "Poor %s. They fell into an endless pit",
+            "Mutants killed %s",
+            "%s died from licking something they shouldn't have licked"
+    };
+
+    public static final String[] lickMessages = {
+            "*Licks %s.* Tastes like chicken!",
+            "*Licks %s.* Tastes like a wet dog! *shivers*",
+            "*Licks %s.* Tastes like pee",
+            "*Licks %s.* Tastes like shit",
+            "*Licks %s.* Tastes like pizza!",
+            "*Licks %s.* Tastes like printer ink",
+            "*Licks %s.* Tastes like someone forgot to shower",
+            "*Licks %s.* Tastes like a cat!",
+            "I'm not licking %s!",
+            "*Licks %s.* *shivers*",
+            "*Licks %s. Washes mouth with soap*",
+            "*Licks %s. Dies from the awful taste*",
+            "*Licks %s. Tongue gets stuck*"
+    };
+
     public static String BANNED_USERS(String site){
         return "banned-users-" + site;
     }

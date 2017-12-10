@@ -62,6 +62,8 @@ public class CommandCenter {
         addCommand(new LMGTFY());
         addCommand(new UpdateRank(site));
         addCommand(new DebugRanks(site));
+        addCommand(new Kill(site));
+        addCommand(new Lick(site));
 
         listeners = new ArrayList<>();
         listeners.add(new WaveListener());

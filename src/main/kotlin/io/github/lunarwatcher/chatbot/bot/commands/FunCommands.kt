@@ -1,6 +1,9 @@
 package io.github.lunarwatcher.chatbot.bot.commands
 
 import io.github.lunarwatcher.chatbot.bot.chat.BMessage
+import io.github.lunarwatcher.chatbot.bot.sites.Chat
+import io.github.lunarwatcher.chatbot.utils.Utils
+import io.github.lunarwatcher.chatbot.utils.Utils.random
 import java.util.*
 
 class RandomNumber() : AbstractCommand("random", listOf("dice"), "Generates a random number"){
@@ -48,5 +51,77 @@ class LMGTFY : AbstractCommand("lmgtfy", listOf("searchfor", "google"), "Sends a
         query = query.replace(" ", "+")
 
         return BMessage(GOOGLE_LINK + query, false)
+    }
+}
+
+class Kill(val chat: Chat) : AbstractCommand("kill", listOf("assassinate"), "They must be disposed of!"){
+    val random = Random();
+
+    override fun handleCommand(input: String, user: User): BMessage? {
+        if(!matchesCommand(input))
+            return null;
+        val split = splitCommand(input);
+        var user: String? = null;
+        if (split.size < 2){
+            val list = mutableListOf<RankInfo>();
+            list.addAll(chat.config.ranks.values);
+            val count = list.count { it.username != null };
+
+            if(count == 0)
+                return BMessage("You have to tell me who to dispose of", true);
+
+            do{
+                val entry = list[random.nextInt(list.size)];
+
+                if(entry.username != null){
+                    user = "@" + entry.username;
+                    break;
+                }
+            }while(entry.username == null);
+        }else{
+            user = split["content"];
+        }
+
+        if(chat.name == "discord"){
+            if(user!!.toLowerCase().contains("<@!" + chat.site.config.userID + ">")){
+                return BMessage("I'm not killing myself.", true);
+            }
+        }else{
+            if(user!!.toLowerCase().contains(("@" + chat.site.config.username).toLowerCase())){
+                return BMessage("I'm not killing myself", true);
+            }
+        }
+
+        return BMessage("> " +Utils.getRandomKillMessage(user), true);
+    }
+}
+
+class Lick(val chat: Chat) : AbstractCommand("lick", listOf(), "Licks someone. Or something"){
+    override fun handleCommand(input: String, user: User): BMessage? {
+        if(!matchesCommand(input))
+            return null;
+        val split = splitCommand(input);
+        var user: String? = null;
+        if (split.size < 2){
+            val list = mutableListOf<RankInfo>();
+            list.addAll(chat.config.ranks.values);
+            val count = list.count { it.username != null };
+
+            if(count == 0)
+                return BMessage("You have to tell me who to lick", true);
+
+            do{
+                val entry = list[random.nextInt(list.size)];
+
+                if(entry.username != null){
+                    user = "@" + entry.username;
+                    break;
+                }
+            }while(entry.username == null);
+        }else{
+            user = split["content"];
+        }
+
+        return BMessage("> " +Utils.getRandomLickMessage(user), true);
     }
 }

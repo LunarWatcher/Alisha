@@ -1,5 +1,6 @@
 package io.github.lunarwatcher.chatbot.utils;
 
+import com.sun.xml.internal.bind.v2.runtime.reflect.opt.Const;
 import io.github.lunarwatcher.chatbot.Constants;
 import io.github.lunarwatcher.chatbot.Database;
 import io.github.lunarwatcher.chatbot.bot.commands.BotConfig;
@@ -149,6 +150,27 @@ public final class Utils {
 
         }
     }
+
+    public static String getRandomKillMessage(String input){
+        String unformatted = Constants.killMessages[random.nextInt(Constants.killMessages.length)];
+
+        try{
+            return String.format(unformatted, input);
+        }catch(Exception e){
+            return unformatted;
+        }
+    }
+
+    public static String getRandomLickMessage(String input){
+        String unformatted = Constants.lickMessages[random.nextInt(Constants.lickMessages.length)];
+
+        try{
+            return String.format(unformatted, input);
+        }catch(Exception e){
+            return unformatted;
+        }
+    }
+
 
     //Utility method for checking etc classes defined in BotConfig
 
