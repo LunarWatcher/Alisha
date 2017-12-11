@@ -156,24 +156,30 @@ class Learn(val commands: TaughtCommands, val center: CommandCenter) : AbstractC
         if(args.size < 2)
             return BMessage("You have to supply at least two arguments!", true);
 
+        val split = (args["content"] ?: return BMessage("Supply valid arguments -_-", true))
+                .split(" ".toRegex(), limit = 2);
+
+        if(split.size != 2 || split[0] == null || split[1] == null){
+            return BMessage("...", true);
+        }
+
         var name = "undefined";
         var desc = "No description was supplied";
         val creator = user.userID;
         var output = "undefined";
         var reply = false;
 
-        for(i in 0 until args.size){
-            when (i) {
-                0 -> //The name is the name of the command used, not the one that's attempted learned.
+        val keys = args.keys;
+
+        loopie@ for(i in 0 until args.size){
+            val key = args.keys.elementAt(i);
+            when (key) {
+                "content" -> { //The name is the name of the command used, not the one that's attempted learned.
                     name = args["content"]!!.split(" ", limit = 2)[0]
-                1 -> output = args["content"]!!.split(" ", limit = 2)[1]
-                2 -> try {
-                    reply = args["-r"]?.toBoolean() ?: return null;
-                }catch(e: ClassCastException){
-                    return BMessage("The 3rd argument has to be a valid boolean!", true);
+                    output = args["content"]!!.split(" ", limit = 2)[1]
                 }
-                3 -> desc = args["-d"] ?: "No description supplied"
-                4 -> {
+                "-d" -> desc = args["-d"] ?: "No description supplied"
+                "-snfw" -> {
                     nsfw = try {
                         (args["-nsfw"] ?: (center.site.name == "discord")).toString().toBoolean()
                     }catch(e: Exception){
