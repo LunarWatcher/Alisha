@@ -34,7 +34,7 @@ public class BotCore {
 
     public static void test(){
         //Test stuff here
-        //System.exit(1);
+
     }
     public static void main(String[] args) throws IOException /*Too lazy to create a try-catch*/{
         test();

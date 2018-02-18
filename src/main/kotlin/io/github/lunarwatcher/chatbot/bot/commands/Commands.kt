@@ -275,6 +275,14 @@ class AboutCommand() : AbstractCommand("about", listOf("whoareyou"), "Info about
     }
 }
 
+class BasicPrintCommand(val print: String, name: String, aliases: List<String>, desc: String) : AbstractCommand(name, aliases, desc){
+    override fun handleCommand(input: String, user: User): BMessage? {
+        if(!matchesCommand(input))
+            return null;
+        return BMessage(print, false)
+    }
+}
+
 class Alive : AbstractCommand("alive", listOf(), "Used to check if the bot is working"){
     override fun handleCommand(input: String, user: User): BMessage? {
         if(!matchesCommand(input))

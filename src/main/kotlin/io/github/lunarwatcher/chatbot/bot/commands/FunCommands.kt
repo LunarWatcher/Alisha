@@ -15,12 +15,13 @@ class RandomNumber() : AbstractCommand("random", listOf("dice"), "Generates a ra
         }
         try {
             val split = input.split(" ");
-            if (split.size == 1)
-                return BMessage(randomNumber(6, 1), true);
-            else if (split.size == 2)
-                return BMessage(randomNumber(split[1].toInt(), 1), true)
-            else if (split.size >= 3)
-                return BMessage(randomNumber(split[1].toInt(), split[2].toInt()), true)
+            when {
+                split.size == 1 -> return BMessage(randomNumber(6, 1), true)
+                split.size == 2 -> return BMessage(randomNumber(split[1].toInt(), 1), true)
+                split.size >= 3 -> return BMessage(randomNumber(split[1].toInt(), split[2].toInt()), true)
+                else -> {
+                }
+            }
         }catch(e: Exception){
             return BMessage("Something went terribly wrong", true);
         }
@@ -123,5 +124,43 @@ class Lick(val chat: Chat) : AbstractCommand("lick", listOf(), "Licks someone. O
         }
 
         return BMessage("> " +Utils.getRandomLickMessage(user), true);
+    }
+}
+
+class Give(val chat: Chat) : AbstractCommand("give", listOf(), "Gives someone something"){
+
+    override fun handleCommand(input: String, user: User): BMessage? {
+        if(!matchesCommand(input)){
+            return null;
+        }
+        val inp = splitCommand(input);
+        var split = inp["content"]?.split(" ", limit=2) ?: return BMessage("#8754987", false);
+        if(split.size != 2)
+            return BMessage("You have to tell me what to give and to who", true);
+
+        val who = split[0].trim()
+        val what = split[1].trim()
+
+        return BMessage("*gives $what to $who*", false);
+
+    }
+}
+
+class Ping : AbstractCommand("ping", listOf("poke"), "Pokes someone"){
+    override fun handleCommand(input: String, user: User): BMessage? {
+        if(!matchesCommand(input)) return null;
+
+        val inp = splitCommand(input);
+        var content = inp["content"]?.replace(" ", "") ?: return null;
+        if(!content.startsWith("@"))
+            content = "@" + content;
+        return BMessage("*pings $content*", false);
+    }
+}
+
+class Appul : AbstractCommand("appul", listOf("apple"), "Apples."){
+    override fun handleCommand(input: String, user: User): BMessage? {
+        if(!matchesCommand(input)) return null;
+        return BMessage("I LUV APPULS!", true);
     }
 }

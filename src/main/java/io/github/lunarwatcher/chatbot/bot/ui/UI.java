@@ -6,10 +6,13 @@ import io.github.lunarwatcher.chatbot.Database;
 import io.github.lunarwatcher.chatbot.bot.Bot;
 import io.github.lunarwatcher.chatbot.bot.sites.Chat;
 import javafx.application.Application;
+import javafx.application.Platform;
+import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 
 import javax.swing.*;
 import java.awt.*;
@@ -49,6 +52,9 @@ public class UI extends Application {
         stage.setTitle("Alisha");
         stage.setScene(scene);
         stage.setResizable(false);
+
+        stage.setOnCloseRequest(event -> System.exit(0));
         stage.show();
+
     }
 }

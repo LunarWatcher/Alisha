@@ -64,7 +64,11 @@ public class CommandCenter {
         addCommand(new DebugRanks(site));
         addCommand(new Kill(site));
         addCommand(new Lick(site));
-
+        addCommand(new Give(site));
+        addCommand(new Ping());
+        addCommand(new Appul());
+        addCommand(new BasicPrintCommand("(╯°□°）╯︵ ┻━┻", "tableflip", new ArrayList<>(), "The tables have turned..."));
+        addCommand(new BasicPrintCommand("┬─┬ ノ( ゜-゜ノ)", "unflip", new ArrayList<>(), "The tables have turned..."));
         listeners = new ArrayList<>();
         listeners.add(new WaveListener());
         MentionListener ml = new MentionListener(site);

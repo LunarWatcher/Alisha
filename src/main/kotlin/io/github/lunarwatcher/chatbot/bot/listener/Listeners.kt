@@ -25,6 +25,7 @@ class KnockKnock(val mention: MentionListener) : AbstractListener("Knock knock",
         }
 
         mention.ignoreNext();
+        val inp =
         when(context?.index){
             0 ->{
                 context?.next()

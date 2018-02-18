@@ -57,14 +57,7 @@ class MentionListener(val site: Chat) : AbstractListener("ping", "Reacts to ping
     }
 
 
-    fun containsUsername(input: String) : Boolean{
-        for(i in site.site.config.username.length downTo 3){
-            if(input.toLowerCase().contains(("@" + site.site.config.username.substring(0, i).toLowerCase()))){
-                return true;
-            }
-        }
-        return false;
-    }
+    fun containsUsername(input: String) : Boolean = (site.site.config.username.length downTo 3).any { input.toLowerCase().contains(("@" + site.site.config.username.substring(0, it).toLowerCase())) };
 
     fun ignoreNext(){
         ignoreNext = true;

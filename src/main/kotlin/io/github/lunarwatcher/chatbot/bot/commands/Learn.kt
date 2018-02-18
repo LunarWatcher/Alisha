@@ -179,7 +179,7 @@ class Learn(val commands: TaughtCommands, val center: CommandCenter) : AbstractC
                     output = args["content"]!!.split(" ", limit = 2)[1]
                 }
                 "-d" -> desc = args["-d"] ?: "No description supplied"
-                "-snfw" -> {
+                "-nsfw" -> {
                     nsfw = try {
                         (args["-nsfw"] ?: (center.site.name == "discord")).toString().toBoolean()
                     }catch(e: Exception){
