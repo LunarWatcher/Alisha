@@ -1,3 +1,7 @@
+# Deprecation notice
+
+This project is no longer maintained, as it's been improved in [/LunarWatcher/NN-chatbot](//github.com/LunarWatcher/NN-chatbot). This repo exists as a legacy-repo for the version prior to integrating with a neural network. 
+
 # Alisha
 
 Alisha is a cross-site chatbot written in Java and Kotlin. The flexible framework allows for virtually any site to be added to the bot.
